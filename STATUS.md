@@ -2,56 +2,44 @@
 
 > 單一真相。每次離開前更新（全域憲法收尾鐵律）。
 **最後更新：** 2026-06-21
-**整體狀態：** 🟢 web/worker/案例庫已提交（`bb1ef08`，純本機未 push）
+**整體狀態：** 🟢 已 push 到 private repo（github.com/589411/news-response），核心功能可用、可上線
 
 ## 一句話現況
-桃園煉油廠「新聞說明稿快速編輯程式」：表單勾關鍵字→Worker 代理 LLM 生稿→PR 式學習。
-本機已跑起靜態站（8788）與 wrangler dev（8787）。**卡在 `reference_md_deidentified/` 6 檔殘留人名待決定怎麼清，未 push。**
+桃園煉油廠「新聞說明稿快速編輯程式」：結構化表單勾關鍵字 → Worker 代理 LLM（gpt-5-chat 免費）生稿 → 具名確認 → 乾淨對外稿 + 內部審查註記 → 人工核稿 → 回填學習。本機 demo 跑通。
 
-## 下一個具體動作 ⭐
-1. **你在瀏覽器實測長官具名功能**（http://localhost:8788 → 填表 → 生成 → 跳「具名確認」，預設對就 Enter）。
-   先到「🗂 長官名單」把 ○○○ 換成真實現任姓名（公開資料）。
-2. 實測 OK → commit 此功能（officials.json + UI + 治理文件兩類分流）。
-3. 語音輸入校正（Web Speech API + Haiku 術語/錯字/職稱校正，接 Phase 3 glossary.json）。
-4. push 到 private repo（歷史已乾淨，等 Joseph 指示）。
+## 下一個具體動作 ⭐（明天）
+1. **填現任官員姓名進 `officials.json`**（公開資料，目前全 ○○○ 佔位）→ commit。
+   - 頁面「🗂 長官名單」填 → 按「⬇ 匯出 officials.json」覆蓋檔案；或直接編輯檔。
+2. **#2 表單一致性檢查**：勾不相容組合（如 涉及物質=廢水 ＋ 處置=攔油索/回收油料）時，生成前提醒。
+3. **上線部署**：`wrangler deploy` + `wrangler secret put GITHUB_TOKEN`（正式環境，勿用本機 .dev.vars）；
+   Worker 加 `x-app-key` + 鎖 `ALLOWED_ORIGIN` 防白嫖（PLAN Phase 2）。
+4. 術語修正分頁接 `glossary.json`（PLAN Phase 3）。
 
-## 未提交改動（2026-06-21，待一起 commit）
-- 長官/民代具名 + 具名確認面板（officials.json）；語音輸入 + 預校正詞庫（corrections.json）。
-- 治理：CONSTITUTION 條目六 / CLAUDE.md 改兩類分流。
-- **Worker 模型升級**：GH_MODEL gpt-4o→**gpt-5-chat**（免費、品質大升）；worker.js 自動依模型挑
-  `max_tokens` / `max_completion_tokens`（支援 gpt-5/o3/o4 推理版）。
-- **出稿格式修正**：本文乾淨無 (來源:)/[待確認]，溯源與待確認改列「【內部審查註記（請勿對外）】」；
-  複製/LINE/學習只取對外本文（publicDraft）。已實測 gpt-5-chat 出稿符合。
-- 本機：worker/.dev.vars（gitignored）放 GITHUB_TOKEN + ALLOWED_ORIGIN=localhost:8788 解 CORS。
-- ⏳ 待辦：#2 表單一致性檢查（廢水↔油料處置不相容提醒）；官方姓名填入 officials.json。
+## 本機開發環境（重啟後要重跑）
+- 靜態站（no-cache）：`python3 <scratchpad>/nocache_server.py` 服務 docs/ 於 8788（或 `python3 -m http.server 8788 -d docs`）。
+- Worker：`cd worker && npx wrangler dev --port 8787 --local`（讀 `worker/.dev.vars` 的 GITHUB_TOKEN + ALLOWED_ORIGIN=localhost:8788 解 CORS）。
+- 前端「⚙ API 設定」→ Worker 代理，Endpoint = `http://localhost:8787`。
+- ⚠ token 在 `worker/.dev.vars`（gitignored）。提醒：那把 PAT 曾貼在終端機，建議測試告一段落後 revoke 重發。
 
-## 已完成
-- ✅ 去識別化收尾：單一乾淨 commit、全歷史零殘留人名（2026-06-21）。
-- ✅ 長官/民代具名功能（2026-06-21，未 commit）：
-  - `officials.json`（公開資料、build 內嵌）+「🗂 長官名單」編輯器（含最後確認日）。
-  - 生成前「具名確認」面板：預設姓名正確直接 Enter；逾 180 天未確認標⚠；`○○○` 佔位不具名。
-  - 確認的姓名注入 prompt「具名規則」；憲法條目六/CLAUDE 改為兩類分流。
-  - 驗證：build OK、JS 語法 OK、純邏輯單元測試全過、頁面 200。
+## 已完成（皆已 push）
+- ✅ 去識別化 + squash 乾淨歷史（6576a85）：正文 38 檔去名、3 檔改名、40+ 人名與員工 email 清除，全歷史殘留人名=0；單位名稱保留。工具 `scripts/deidentify.py` + gitignored 對照表 `scripts/name_map.local.json`。
+- ✅ 長官具名 + 語音預校正 + gpt-5-chat + 乾淨出稿格式（00e8d9c）：
+  - `officials.json` + 具名確認面板（複數副總/副執行長、立委/市議員；逾180天標⚠；○○○不具名）。
+  - `corrections.json` + 語音輸入(Web Speech API) + 生成前自動預校正。
+  - Worker `GH_MODEL=gpt-5-chat`，自動挑 max_tokens/max_completion_tokens。
+  - 出稿本文乾淨無標記，溯源改列「內部審查註記」；複製/LINE/學習只取對外本文。
+  - 治理：CONSTITUTION 條目六 + CLAUDE.md 改人名兩類分流（公開首長可具名／員工民眾去名）。
 
-## 去識別化結果（2026-06-21 完成）
-- 方針：人名（含公眾人物，因會退休/調職）一律降為**級職**，保留級職與**權責單位**。
-- 工具：`scripts/deidentify.py`（規則層）+ 本機 gitignored 對照表 `scripts/name_map.local.json`
-  （含人名，不入庫；由 Opus 子代理掃全庫複核產出）。執行 `--apply`。
-- 成果：正文 38 檔去名、3 檔改名；清除 40+ 人名與員工 CPC email。
-- 驗證：正文+檔名+檔頭+report 殘留人名 = 0；單位名稱完整保留。
-
-## 定位
-桃園煉油廠危機/輿情新聞說明稿快速編輯器，給公關承辦用；治理見 CONSTITUTION/FRAMEWORK。
-
-## 怎麼驗證這一步成功
-`python scripts/build_html.py` 跑得出 web/index.html，本地打開正常。
-
-## 卡點 / 待你決定
-- 專案定位與目標產出尚未明確界定。
+## 治理重點
+- 人名兩類：現任公開職務首長/民代可具名（officials.json，須正確不臆測）；員工/民眾/傷亡者一律去名。
+- `reference_md_deidentified/`（RAG 素材）維持全去名；`doc/` 原始檔永不進 git。
+- 金鑰與含人名的對照表一律 gitignored，不入庫/歷史。
 
 ## 進度脈絡（新的在上）
-- 2026-06-19 起草此 STATUS
-- 2026-06-14 init：憲法/框架/知識庫/題庫/去識別化素材庫
+- 2026-06-21 去識別化收尾 + 長官具名/語音校正/gpt-5-chat/乾淨格式；建 private repo 並 push。
+- 2026-06-19 起草 STATUS。
+- 2026-06-14 init：憲法/框架/知識庫/題庫/去識別化素材庫。
 
 ## 已知坑
-- 去識別化素材庫涉及機敏資料，commit 前務必確認無真實個資。
+- 去識別化素材涉及機敏資料，任何新增素材 commit 前必跑 `scripts/deidentify.py` 並確認殘留=0。
+- gpt-5/gpt-5-mini 等推理模型需足夠 token 預算才會出文（worker 已自動改用 max_completion_tokens）。
