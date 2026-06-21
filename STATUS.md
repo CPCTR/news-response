@@ -4,6 +4,14 @@
 **最後更新：** 2026-06-22
 **整體狀態：** 🟢 已上線 Cloudflare：Pages https://news-response.pages.dev + Worker news-response-llm.589411.workers.dev
 
+## 存取鎖定進度（同網域 + Cloudflare Access）
+- ✅ Worker route `response.new-cpc.com/api/*` 已部署；頁面端點依網域自動選（custom domain 走同源 `/api`、其他走 workers.dev）。
+- ✅ Cloudflare Access 應用 `response`（destination response.new-cpc.com、policy 只允許 589411@gmail.com、One-time PIN 登入）已設定。
+- ✅ Anthropic key 已移除（成本止血）。
+- ⏳ 等 response.new-cpc.com 的 Edge SSL 簽發（Initializing）。
+- ⏳ 待辦：SSL 好 → 你瀏覽器登入測 `/api` 生成 → 確認後我把 `workers_dev=false` 關閉 workers.dev（徹底鎖死，只剩 Access 閘後的 /api）。
+- 註：GitHub 免費額度今日測試已限流，恢復後主路才會出稿；或 demo 前再加回 Anthropic fallback。
+
 ## 上線資訊（全部已驗證）
 - 頁面（Pages）：https://news-response.pages.dev （任何機器零設定可用）
 - 自訂網域：https://response.new-cpc.com （已綁，DNS/SSL 傳播中，稍後生效）
