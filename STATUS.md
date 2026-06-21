@@ -24,8 +24,11 @@
 ## 一句話現況
 桃園煉油廠「新聞說明稿快速編輯程式」：結構化表單勾關鍵字 → Worker 代理 LLM（gpt-5-chat 免費）生稿 → 具名確認 → 乾淨對外稿 + 內部審查註記 → 人工核稿 → 回填學習。本機 demo 跑通。
 
-## 下一個具體動作 ⭐（明天）
-1. ✅（已完成）填現任官員姓名進 `officials.json`（74f97d9）。剩 1 筆副執行長 + 民代為 ○○○，需要時再補。
+## 下一個具體動作 ⭐（換機器接手看這裡 + docs/devlog/2026-06-22.md）
+1. **收尾存取鎖定**（進行中，卡在 SSL）：
+   a. 等 `response.new-cpc.com` SSL 簽發 → 瀏覽器開它 → Cloudflare Access email PIN 登入 → 測「生成新聞初稿」。
+   b. `/api` 能出稿後 → 編輯 `worker/wrangler.toml` 把 `workers_dev = true` 改 **`false`** → `cd worker && wrangler deploy`（關閉 workers.dev 後門，徹底鎖死）。
+   c. **新機器前置**：先 `wrangler login`（OAuth 每台要重登，帳號 589411@gmail.com）。詳見 devlog「新機器接手須知」。
 2. **#2 表單一致性檢查**：勾不相容組合（如 涉及物質=廢水 ＋ 處置=攔油索/回收油料）時，生成前提醒。
 3. **上線部署**（防護已做完 e40ed93，待 Joseph 確認後執行）：
    a. `cd worker && wrangler login`（互動，Joseph 自己跑）。
