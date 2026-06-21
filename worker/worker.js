@@ -69,8 +69,8 @@ export default {
     const force = body.force; // 可選："github" | "openrouter" | "anthropic"
     // 供應商鏈：依序嘗試，前一個失敗就換下一個；force 指定則只跑那一個
     const chain = [
-      { name: "github",     enabled: !!env.GITHUB_TOKEN,       fn: callGithub },
       { name: "openrouter", enabled: !!env.OPENROUTER_API_KEY, fn: callOpenRouter },
+      { name: "github",     enabled: !!env.GITHUB_TOKEN,       fn: callGithub },
       { name: "anthropic",  enabled: !!env.ANTHROPIC_API_KEY,  fn: callAnthropic },
     ].filter((p) => p.enabled && (!force || force === p.name));
 
