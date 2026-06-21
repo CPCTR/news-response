@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>桃園煉油廠 新聞說明稿快速編輯程式</title>
+<style>
+  :root{ --cpc:#003399; --cpc2:#0b57d0; --bg:#f4f6fb; --line:#dfe3ec; --ok:#137333; --warn:#b3261e; --muted:#5f6571; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;background:var(--bg);color:#1a1c20;line-height:1.6}
+  header{background:var(--cpc);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  header h1{font-size:17px;margin:0;font-weight:700}
+  header .org{font-size:11px;opacity:.85;line-height:1.2}
+  .tabs{display:flex;gap:6px;margin-left:8px}
+  .tab{padding:5px 12px;border-radius:7px 7px 0 0;background:rgba(255,255,255,.12);color:#fff;cursor:pointer;font-size:13px;border:0}
+  .tab.on{background:#fff;color:var(--cpc);font-weight:700}
+  .ver{margin-left:auto;font-size:12px;opacity:.85}
+  .wrap{max-width:1240px;margin:0 auto;padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .col{display:flex;flex-direction:column;gap:14px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}
+  .card h2{font-size:14px;margin:0 0 10px;color:var(--cpc);border-left:4px solid var(--cpc);padding-left:8px;display:flex;align-items:center;gap:8px}
+  .req{background:#e8f0fe;color:var(--cpc2);font-size:11px;padding:1px 7px;border-radius:999px;font-weight:700}
+  .danger{background:#fde8e6;color:var(--warn);font-size:11px;padding:1px 7px;border-radius:999px;font-weight:700}
+  label{font-size:13px;color:var(--muted);display:block;margin:6px 0 4px}
+  textarea,input,select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;font-size:14px;font-family:inherit;background:#fff}
+  textarea{resize:vertical}
+  .chk{display:flex;gap:8px;align-items:center;padding:5px 8px;border:1px solid var(--line);border-radius:7px;margin:5px 0;background:#fafbfe;cursor:pointer}
+  .chk:hover{border-color:var(--cpc2)}
+  .chk input{width:auto;margin:0}.chk span{font-size:13.5px;color:#1a1c20}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .other{margin-top:4px}
+  button{background:var(--cpc2);color:#fff;border:0;border-radius:7px;padding:9px 16px;font-size:14px;cursor:pointer;font-weight:600}
+  button:hover{filter:brightness(1.08)} button.ghost{background:#eef1f8;color:var(--cpc)} button.sm{padding:5px 10px;font-size:12px}
+  button.ok{background:var(--ok)} button.block{width:100%;padding:12px;font-size:15px;margin-top:4px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .muted{color:var(--muted);font-size:12px}
+  .toolbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-bottom:8px;flex-wrap:wrap}
+  .draftbox{min-height:380px}
+  .warnbox{background:#fff7ed;border:1px solid #f0c089;color:#9a3412;padding:8px 10px;border-radius:7px;font-size:13px;margin:8px 0;display:none}
+  .status{font-size:12px;color:var(--muted);margin:8px 0}
+  .sim{background:#eef7ff;border:1px solid #cfe2ff;border-radius:8px;padding:8px 10px;font-size:12.5px;color:#0b3d91;margin:6px 0}
+  .sim b{color:var(--cpc)} .sim .c{display:block;padding:2px 0;border-top:1px dashed #cfe2ff;margin-top:4px}
+  .auditpanel{background:#f7fbf8;border:1px solid #bfe3c9;border-radius:8px;padding:10px 12px;margin-top:8px;white-space:pre-wrap;font-size:13px}
+  .auditpanel.fail{background:#fff5f5;border-color:#f0b9b9}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:6px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:50}
+  .modal .box{background:#fff;border-radius:12px;padding:20px;max-width:520px;width:92%}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--line)}
+  .pill.on{background:#e6f4ea;color:var(--ok);border-color:#bfe3c9}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="org">台灣中油股份有限公司<br/>煉製事業部桃園煉油廠</div>
+  <h1>新聞說明稿快速編輯程式</h1>
+  <div class="tabs">
+    <button class="tab on" id="tabForm" onclick="switchTab('form')">📋 表單填寫模式</button>
+    <button class="tab" id="tabTerm" onclick="switchTab('term')">✍ 術語修正</button>
+  </div>
+  <span class="ver" id="libCount">案例庫：0</span>
+  <span class="ver" style="opacity:.6">V2.1</span>
+</header>
+
+<!-- ========== 表單模式 ========== -->
+<div class="wrap" id="formMode">
+  <!-- 左：結構化表單 -->
+  <div class="col">
+    <div class="card">
+      <h2>📋 基本資訊 <span class="req">必填</span></h2>
+      <label>事件發生時間 *</label>
+      <input type="datetime-local" id="evtTime"/>
+      <label>通報來源</label>
+      <select id="source" onchange="toggleOther('source')">
+        <option value="">— 請選擇 —</option>
+        <option>本廠主動發現</option><option>消防局通知</option><option>環保局通知</option>
+        <option>民眾陳情</option><option value="__other">其它（自行輸入）</option>
+      </select>
+      <input class="other" id="source_other" placeholder="請輸入通報來源" style="display:none"/>
+    </div>
+
+    <div class="card">
+      <h2>📍 地點或設備</h2>
+      <div class="grid2" data-group="loc"></div>
+      <input class="other" id="loc_other" placeholder="請輸入其它地點或設備名稱" style="display:none"/>
+    </div>
+
+    <div class="card">
+      <h2>🛢 涉及物質</h2>
+      <div class="grid2" data-group="mat"></div>
+      <input class="other" id="mat_other" placeholder="請輸入物質名稱" style="display:none"/>
+    </div>
+
+    <div class="card">
+      <h2>🔍 原因</h2>
+      <div class="grid2" data-group="cause"></div>
+      <input class="other" id="cause_other" placeholder="請輸入其它原因" style="display:none"/>
+    </div>
+
+    <div class="card">
+      <h2>📊 目前情況</h2>
+      <div class="grid2" data-group="status"></div>
+      <input class="other" id="status_other" placeholder="請輸入其它情況說明" style="display:none"/>
+    </div>
+
+    <div class="card">
+      <h2>🛠 處置方式</h2>
+      <div data-group="handle"></div>
+      <input class="other" id="handle_other" placeholder="請輸入其它處置方式" style="display:none"/>
+    </div>
+
+    <div class="card">
+      <h2>⚠ 高風險欄位 <span class="danger">禁止缺漏</span></h2>
+      <label>人員傷亡狀況 *</label>
+      <select id="casualty">
+        <option value="">— 請選擇 —</option>
+        <option>無人員傷亡</option><option>有人員受傷（輕傷）</option><option>有人員受傷（重傷）</option>
+        <option>有人員死亡</option><option>疑似中毒，送醫觀察中</option><option>待確認</option>
+      </select>
+      <label>是否已通報桃園市政府環保局 *</label>
+      <select id="reported">
+        <option value="">— 請選擇 —</option>
+        <option>已通報</option><option>尚未通報</option><option>不需通報（廠內事件）</option>
+      </select>
+    </div>
+
+    <div class="card">
+      <h2>📝 補充說明</h2>
+      <div data-group="stmt"></div>
+      <label style="margin-top:8px">自由補充說明</label>
+      <textarea id="freeNote" rows="3" placeholder="例：指揮官為廠長○○○、初步研判為硫化鐵自燃、外洩量…（請勿填寫個資）"></textarea>
+      <div class="warnbox" id="piiWarn"></div>
+    </div>
+
+    <button class="block" onclick="generate('draft')">⚡ 生成新聞初稿</button>
+    <div class="row" style="margin-top:8px">
+      <button class="ghost sm" onclick="clearAll()">🗑 清除全部欄位</button>
+      <button class="ghost sm" onclick="openSettings()">⚙ API 設定</button>
+    </div>
+  </div>
+
+  <!-- 右：草稿 -->
+  <div class="col">
+    <div class="card" style="position:sticky;top:16px">
+      <div class="toolbar">
+        <h2 style="margin:0;border:0;flex:1">📄 生成的新聞說明稿草稿</h2>
+        <span class="pill on" id="ragPill" onclick="toggleRag()">📚 RAG 啟用</span>
+        <button class="ok sm" onclick="copyDraft()">📋 複製</button>
+        <button class="ghost sm" onclick="shareLine()">💬 LINE</button>
+        <button class="ghost sm" onclick="document.getElementById('draft').value=''">✕ 清除</button>
+      </div>
+      <div id="simCases" style="display:none"></div>
+      <textarea id="draft" class="draftbox" placeholder="填寫左側欄位後，點擊「生成新聞初稿」即可在此顯示可編輯的草稿。&#10;&#10;生成後可直接在此修改內容，完成後點擊「複製」或「生成新聞稿（正式版）」。"></textarea>
+      <div class="status"><span class="dot"></span><span id="status">準備就緒</span><span id="charCount" style="float:right"></span></div>
+      <div id="auditBox" style="display:none"></div>
+      <div class="row">
+        <input id="rewritePrompt" placeholder="加入修改提示詞，例：語氣再溫和些 / 補上回收量待確認" style="flex:1"/>
+        <button class="ghost sm" onclick="generate('rewrite')">↻ 套用修改</button>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <button class="ghost sm" onclick="audit()">✅ 校正稽核（自我修正）</button>
+        <button class="ok sm" onclick="learnFromDraft()">📥 採用並學習</button>
+        <button class="ghost sm" onclick="exportLib()">⬇ 匯出案例庫</button>
+        <label class="ghost sm" style="cursor:pointer;margin:0;color:var(--cpc);padding:5px 10px;border-radius:7px;background:#eef1f8">⬆ 匯入<input type="file" accept="application/json" onchange="importLib(this)" style="display:none"></label>
+      </div>
+      <button class="block" onclick="generate('formal')">🖼 生成新聞稿（正式版）</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 術語修正模式 ========== -->
+<div class="wrap" id="termMode" style="display:none;grid-template-columns:1fr">
+  <div class="card">
+    <h2>✍ 術語修正</h2>
+    <p class="muted">貼上文字，依石化廠用語規範修正（如：瓦斯→液化石油氣、漏氣→氣體外洩、爆炸→事故等），並標出不宜對外的措辭。</p>
+    <textarea id="termIn" rows="10" placeholder="貼上要檢查的文字…"></textarea>
+    <div class="row" style="margin-top:8px"><button onclick="fixTerms()">修正術語</button><span class="status" id="termStatus"></span></div>
+    <label style="margin-top:10px">修正結果</label>
+    <textarea id="termOut" rows="10"></textarea>
+    <button class="ghost sm" style="margin-top:6px" onclick="copyEl('termOut')">📋 複製結果</button>
+  </div>
+</div>
+
+<!-- 設定 modal -->
+<div class="modal" id="settings"><div class="box">
+  <h2 style="color:var(--cpc);margin-top:0">⚙ API 設定（皆只存於本機 localStorage）</h2>
+  <label>後端模式</label>
+  <select id="backend" onchange="toggleBackend()">
+    <option value="worker">Worker 代理（GitHub Models 免費為主，推薦）</option>
+    <option value="direct">瀏覽器直連 Anthropic（自帶金鑰）</option>
+  </select>
+  <div id="workerCfg" style="margin-top:8px">
+    <label>Worker Endpoint</label>
+    <input id="workerUrl" placeholder="https://news-response-llm.你的帳號.workers.dev"/>
+    <p class="muted">金鑰留在 Worker，不會出現在瀏覽器。</p>
+  </div>
+  <div id="directCfg" style="display:none;margin-top:8px">
+    <label>Anthropic API Key</label><input id="apiKey" type="password" placeholder="sk-ant-…"/>
+    <label>模型</label><input id="modelDraft" value="claude-sonnet-4-6"/>
+  </div>
+  <div class="row" style="justify-content:flex-end;margin-top:14px">
+    <button class="ghost" onclick="closeSettings()">取消</button>
+    <button onclick="saveSettings()">儲存</button>
+  </div>
+</div></div>
+
+<script type="application/json" id="kb">{}</script>
+<script type="text/markdown" id="rubric">__RUBRIC__</script>
+<script>
+// ===== 選項（AI 可直接在此 HTML 新增 keyword；下方陣列驅動勾選框）=====
+const OPTIONS = {
+  loc:   ["廠區","廠區廢水工場","廠區煉製工場區","沙崙外海","沙崙油庫","五股油庫","長途管線","廠區外"],
+  mat:   ["航空燃油（Jet A-1）","永續航空燃油（SAF）","低硫燃料油（LSFO）","液化石油氣（LPG）","硫化氫（H2S）","重油","柴油","原油","廢水","廢氣"],
+  cause: ["設備故障","天然災害","原因仍待查證中","管線洩漏","安全連鎖裝置作動"],
+  status:["已成立緊急應變中心","已排除","維修人員正在趕往現場","環保人員正在趕往現場","工安人員正在趕往現場","正在處理中"],
+  handle:["管線已關閉","進行搶修中","現場已佈設攔油索及除油設備","配合環保局稽查人員處理中","消防車於現場灑水灌救中","回收油料中"],
+  stmt:  ["對於造成民眾困擾，桃廠深感抱歉","桃廠將以最快的速度復原","全力搶修以穩定供油","桃廠肩負供應台中以北所需油料"],
+};
+const HAS_OTHER = ["loc","mat","cause","status","handle"]; // 這些群組有「其它」自填
+
+const KB = (()=>{try{return JSON.parse(document.getElementById('kb').textContent)}catch{return{}}})();
+const RUBRIC = document.getElementById('rubric').textContent;
+const PII = /(09\d{2}[-\s]?\d{3}[-\s]?\d{3})|(\(0\d\)\s?\d{6,8})|(0\d-\d{6,8})|(員編\s*[:：]?\s*\w+)/g;
+
+const CONSTITUTION = `你必須嚴守以下憲法（凌駕一切）：
+1.事實可溯源：具體數字/設備/時間只能來自使用者輸入；無來源者標[待確認]，禁止虛構。
+2.危機初期不認責、不臆測原因、不承諾賠償，用「調查中/釐清原因/配合主管機關」。
+3.敏感數據（傷亡/污染）以官方公告為準，不搶在主管機關前發布。
+4.法規與主管機關名稱須正確（環保局、勞檢處/職安署、消防局等），不確定標[待法遵確認]。
+5.語氣嚴肅負責、以社區與員工安全為先；個資（手機/員編/姓名）一律不得寫入對外稿，人名僅以職稱表示。
+6.只產草稿，須經人工核准。`;
+
+// ===== 建立勾選框 =====
+function buildChecks(){
+  document.querySelectorAll('[data-group]').forEach(box=>{
+    const g=box.dataset.group;
+    box.innerHTML=OPTIONS[g].map((t,i)=>
+      `<label class="chk"><input type="checkbox" data-g="${g}" value="${t}"><span>${t}</span></label>`).join('')
+      + (HAS_OTHER.includes(g)?`<label class="chk"><input type="checkbox" id="${g}_otherck" onchange="document.getElementById('${g}_other').style.display=this.checked?'block':'none'"><span>其它：</span></label>`:'');
+  });
+}
+function toggleOther(id){const s=document.getElementById(id);document.getElementById(id+'_other').style.display=s.value==='__other'?'block':'none';}
+function picked(g){
+  const arr=[...document.querySelectorAll(`input[data-g="${g}"]:checked`)].map(c=>c.value);
+  const o=document.getElementById(g+'_other'); if(o&&o.style.display!=='none'&&o.value.trim())arr.push(o.value.trim());
+  return arr;
+}
+
+// ===== tabs / settings =====
+function switchTab(t){
+  formMode.style.display=t==='form'?'grid':'none'; termMode.style.display=t==='term'?'grid':'none';
+  tabForm.classList.toggle('on',t==='form'); tabTerm.classList.toggle('on',t==='term');
+}
+function openSettings(){settings.style.display='flex';}
+function closeSettings(){settings.style.display='none';}
+function toggleBackend(){const w=backend.value==='worker';workerCfg.style.display=w?'block':'none';directCfg.style.display=w?'none':'block';}
+function saveSettings(){localStorage.setItem('cfg',JSON.stringify({backend:backend.value,worker:workerUrl.value,k:apiKey.value,md:modelDraft.value}));closeSettings();}
+function loadSettings(){const c=JSON.parse(localStorage.getItem('cfg')||'{}');if(c.backend)backend.value=c.backend;if(c.worker)workerUrl.value=c.worker;if(c.k)apiKey.value=c.k;if(c.md)modelDraft.value=c.md;toggleBackend();}
+let RAG=true; function toggleRag(){RAG=!RAG;ragPill.classList.toggle('on',RAG);ragPill.textContent=RAG?'📚 RAG 啟用':'📚 RAG 關閉';}
+
+// ===== LLM 呼叫（Worker 為主，直連為備援）=====
+async function callLLM(system,user){
+  const cfg=JSON.parse(localStorage.getItem('cfg')||'{}');
+  if((cfg.backend||'worker')==='worker'){
+    if(!cfg.worker){openSettings();throw new Error('請先設定 Worker Endpoint');}
+    const r=await fetch(cfg.worker,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({system,user,max_tokens:2800})});
+    const j=await r.json(); if(!r.ok||j.error)throw new Error('Worker: '+(j.error||r.status)+(j.detail?' / '+j.detail:'')); return j.text;
+  }
+  if(!cfg.k){openSettings();throw new Error('請先設定 API Key');}
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':cfg.k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:cfg.md||'claude-sonnet-4-6',max_tokens:2800,system,messages:[{role:'user',content:user}]})});
+  if(!r.ok)throw new Error('API '+r.status+': '+(await r.text()).slice(0,200));
+  const j=await r.json(); return j.content.map(c=>c.text).join('');
+}
+
+// ===== 組裝表單 → prompt =====
+function collect(){
+  const src=source.value==='__other'?(document.getElementById('source_other').value||'其它'):source.value;
+  return {
+    time:evtTime.value, source:src,
+    loc:picked('loc'), mat:picked('mat'), cause:picked('cause'),
+    status:picked('status'), handle:picked('handle'),
+    casualty:casualty.value, reported:reported.value,
+    stmt:picked('stmt'), note:freeNote.value.trim(),
+  };
+}
+function factsBlock(f){
+  const L=(k,v)=>v&&v.length?`- ${k}：${Array.isArray(v)?v.join('、'):v}`:null;
+  return [
+    L('事件發生時間',f.time), L('通報來源',f.source),
+    L('地點或設備',f.loc), L('涉及物質',f.mat), L('原因',f.cause),
+    L('目前情況',f.status), L('處置方式',f.handle),
+    L('人員傷亡狀況',f.casualty), L('是否已通報環保局',f.reported),
+    L('擬納入立場/承諾',f.stmt), L('自由補充',f.note),
+  ].filter(Boolean).join('\n');
+}
+function ragContext(){
+  if(!RAG||!KB.official_templates)return '';
+  const tp=KB.official_templates.press_release||{};
+  let s=`\n\n【官方版型參考】抬頭：${tp.header_line1||''}／${tp.header_line2||''}；起手式：${(tp.opening_patterns||[]).join('；')}；結語：${(tp.closing_patterns||[]).join('；')}；頁尾：${tp.footer_template||''}`;
+  const fs=(KB.few_shot_examples||[])[0];
+  if(fs)s+=`\n【語氣範例（勿照抄事實）】標題：${fs.title||''}；內文：${(fs.body||'').slice(0,300)}`;
+  return s;
+}
+
+async function generate(mode){
+  // PII 檢查
+  const m=freeNote.value.match(PII);
+  if(m){piiWarn.style.display='block';piiWarn.innerHTML='⚠ 偵測到疑似個資（'+[...new Set(m)].slice(0,3).join('、')+'…），對外稿不會寫入，請先移除或改以職稱表示。';}
+  else piiWarn.style.display='none';
+
+  let system,user;
+  if(mode==='rewrite'){
+    if(!draft.value.trim()){alert('尚無草稿可修改');return;}
+    system=CONSTITUTION+'\n\n你是新聞稿撰稿助理。依使用者修改提示只改被指出處，其餘保留，輸出完整修訂全文。';
+    user=`【目前草稿】\n${draft.value}\n\n【修改提示】\n${rewritePrompt.value||'潤飾語氣，使更嚴謹'}`;
+  }else{
+    const f=collect();
+    if(!f.time){alert('「事件發生時間」為必填');return;}
+    if(!f.casualty||!f.reported){alert('高風險欄位（人員傷亡、是否通報）禁止缺漏');return;}
+    CURRENT.f=f;
+    const formal = mode==='formal';
+    const sims=similarCases(f); renderSims(sims);
+    let learned='';
+    if(sims.length){
+      learned='\n\n【相似歷史案例（本系統已學習，請參考其措辭與結構，勿照抄事實）】\n'
+        + sims.map(s=>`〔${s.id}〕${(s.tags||[]).join('、')}\n${(s.draft||'').slice(0,400)}`).join('\n---\n');
+    }
+    system=CONSTITUTION+`\n\n你是台灣中油桃園煉油廠的新聞稿撰稿助理。`+ragContext();
+    user=`【本次事件要素（使用者勾選/輸入）】\n${factsBlock(f)}${learned}\n\n【任務】`+(formal
+      ? '產出一篇「正式新聞稿」：含官方抬頭、三段式（背景說明→回應說明→改善與承諾）、頁尾發言人區塊（姓名以○○○代）。每個關鍵事實後標(來源:使用者輸入)，無來源標[待確認]，不得寫入個資。'
+      : '產出一篇「新聞初稿」：簡潔、強調事實與安全，三段為宜。每個關鍵事實後標(來源:使用者輸入)，無來源標[待確認]，不得寫入個資。');
+  }
+  setStatus('生成中…',true);
+  try{
+    const out=await callLLM(system,user);
+    draft.value=out; updateCount();
+    setStatus((mode==='formal'?'正式版':mode==='rewrite'?'已套用修改':'初稿')+'生成完成');
+  }catch(e){setStatus('錯誤');alert(e.message);}
+}
+
+async function fixTerms(){
+  if(!termIn.value.trim()){alert('請先貼上文字');return;}
+  termStatus.textContent='修正中…';
+  try{
+    const out=await callLLM(
+      '你是石化廠新聞用語校正員。依規範修正不精準或不宜對外的措辭（如 瓦斯→液化石油氣、漏氣→氣體外洩、避免「爆炸」等聳動詞、原因未明不得認責），輸出修正後全文，並在最後用「— 修正說明 —」列出更動。',
+      termIn.value);
+    termOut.value=out; termStatus.textContent='完成';
+  }catch(e){termStatus.textContent='錯誤';alert(e.message);}
+}
+
+// ===== 案例庫（回填學習）＋ 相似案例調用 =====
+let CURRENT={f:null};
+function lib(){return JSON.parse(localStorage.getItem('caselib')||'[]');}
+function saveLib(a){localStorage.setItem('caselib',JSON.stringify(a));updateLib();}
+function updateLib(){libCount.textContent='案例庫：'+lib().length;}
+function caseTags(f){return [...(f.loc||[]),...(f.mat||[]),...(f.cause||[]),...(f.status||[])];}
+function similarCases(f){
+  const t=new Set(caseTags(f));
+  return lib().map(c=>({c,score:(c.tags||[]).filter(x=>t.has(x)).length}))
+    .filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,3).map(x=>x.c);
+}
+function renderSims(sims){
+  const box=document.getElementById('simCases');
+  if(!sims.length){box.style.display='none';return;}
+  box.style.display='block';box.className='sim';
+  box.innerHTML='📚 <b>已自動調用 '+sims.length+' 筆相似歷史案例</b>（系統學習成果）：'
+    + sims.map(s=>`<span class="c">〔${s.id}〕${(s.tags||[]).slice(0,4).join('、')}</span>`).join('');
+}
+function learnFromDraft(){
+  if(!draft.value.trim()){alert('尚無草稿可學習');return;}
+  const f=CURRENT.f||collect();
+  const c={id:'PR-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+Math.floor(Math.random()*900+100),
+    ts:Date.now(), tags:caseTags(f), casualty:f.casualty, reported:f.reported,
+    facts:factsBlock(f).slice(0,500), draft:draft.value};
+  const a=lib(); a.unshift(c); saveLib(a);
+  setStatus('已學習為案例 '+c.id+'，下次相似事件將自動調用');
+  alert('✅ 已採用並學習為案例 '+c.id+'\n案例庫共 '+a.length+' 筆。換一個相似事件再生成，即可看到它被自動調用。');
+}
+function exportLib(){const b=new Blob([JSON.stringify(lib(),null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='caselib.json';a.click();}
+function importLib(inp){const fr=new FileReader();fr.onload=()=>{try{const a=JSON.parse(fr.result);if(Array.isArray(a)){saveLib(a);alert('已匯入 '+a.length+' 筆案例。');}}catch{alert('檔案格式錯誤');}};fr.readAsText(inp.files[0]);}
+
+// ===== 校正稽核（Opus，自我修正）=====
+async function audit(){
+  if(!draft.value.trim()){alert('尚無草稿可稽核');return;}
+  const box=document.getElementById('auditBox'); box.style.display='block'; box.className='auditpanel'; box.textContent='稽核中…';
+  const sys=CONSTITUTION+'\n\n'+(RUBRIC&&!RUBRIC.includes('__RUBRIC__')?RUBRIC:'依憲法逐條稽核，輸出：通過/退回、違反條目、修正後定稿、待確認清單。');
+  const user=`【待審草稿】\n${draft.value}`;
+  try{
+    const out=await callLLM(sys,user);
+    box.className='auditpanel'+(/退回/.test(out.slice(0,60))?' fail':'');
+    box.textContent=out;
+    setStatus('校正完成');
+  }catch(e){box.textContent='錯誤：'+e.message;}
+}
+
+// ===== 複製 / 分享 / 工具 =====
+async function copyEl(id){const t=document.getElementById(id).value.trim();if(!t){alert('沒有內容');return;}try{await navigator.clipboard.writeText(t);}catch{document.getElementById(id).select();document.execCommand('copy');}}
+function copyDraft(){copyEl('draft');setStatus('已複製到剪貼簿');}
+function shareLine(){const t=draft.value.trim();if(!t){alert('沒有內容可分享');return;}window.open('https://line.me/R/share?text='+encodeURIComponent(t),'_blank');}
+function setStatus(s,spin){status.textContent=s;}
+function updateCount(){charCount.textContent=draft.value.length+' 字';}
+function clearAll(){document.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);document.querySelectorAll('.other').forEach(o=>{o.value='';o.style.display='none';});source.value='';freeNote.value='';casualty.value='';reported.value='';draft.value='';piiWarn.style.display='none';simCases.style.display='none';auditBox.style.display='none';setNow();updateCount();setStatus('已清除');}
+function setNow(){const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());evtTime.value=d.toISOString().slice(0,16);}
+
+buildChecks(); loadSettings(); setNow(); updateLib(); draft.addEventListener('input',updateCount);
+</script>
+</body>
+</html>

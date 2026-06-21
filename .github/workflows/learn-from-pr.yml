@@ -1,0 +1,65 @@
+name: Learn from new press release
+
+# 觸發：新的去識別化新聞稿被合進 master（reference_md_deidentified/ 有變動）
+# 行為：抽取結構化案例卡 → 開一個 PR 給你審（不直接寫進 main）
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - "reference_md_deidentified/**.md"
+  workflow_dispatch:
+    inputs:
+      files:
+        description: "手動指定要分析的 .md（空白分隔，留空＝最近一次 commit 新增的）"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  pull-requests: write
+  models: read          # 讓內建 GITHUB_TOKEN 可呼叫 GitHub Models
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 找出新增/變動的新聞稿
+        id: changed
+        run: |
+          if [ -n "${{ github.event.inputs.files }}" ]; then
+            echo "files=${{ github.event.inputs.files }}" >> "$GITHUB_OUTPUT"
+          else
+            FILES=$(git diff --name-only --diff-filter=AM HEAD~1 HEAD -- 'reference_md_deidentified/**.md' | tr '\n' ' ')
+            echo "files=$FILES" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 抽取案例卡（KB 策展：用最聰明的 Opus，見 MODELS.md）
+        if: steps.changed.outputs.files != ''
+        env:
+          # 有 ANTHROPIC_API_KEY 走 Opus；沒有則自動退回 GitHub Models（內建 token）
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: claude-opus-4-8
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_MODEL: openai/gpt-4o
+        run: python scripts/extract_case_card.py ${{ steps.changed.outputs.files }}
+
+      - name: 開 PR 給你審
+        if: steps.changed.outputs.files != ''
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: auto/learn-case-cards
+          title: "🤖 自動學習：新增案例卡（請審核）"
+          commit-message: "feat(cases): 自動抽取新聞稿案例卡"
+          body: |
+            這是 Action 從新合入的新聞稿自動抽取的結構化案例卡（RAG 知識點）。
+            請逐一檢查：分類、is_public、key_messages 是否正確、有無殘留個資。
+            確認無誤再 merge。
+          add-paths: cases/**

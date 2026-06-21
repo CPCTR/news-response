@@ -1,0 +1,24 @@
+{
+  "_note": "開發日誌的專案對應表。排程任務 daily-devlog 會讀此檔，把每天的 session 依關鍵字歸到對應專案，並把日誌寫進該專案的 folder/docs/devlog/。新增專案時，補一筆 {name, keywords, folder} 即可。folder 設為 null 表示尚未指定資料夾，日誌會先寫進 fallback_dir 並標記。",
+  "fallback_dir": "/Users/joseph/github/news-response/docs/devlog/_other-projects",
+  "projects": [
+    {
+      "name": "news-response",
+      "display": "石化廠新聞稿撰寫助理",
+      "keywords": ["新聞稿", "速報", "桃園煉油廠", "中油", "輿情", "news-response", "press release", "憲法", "知識庫", "案例卡", "去識別化"],
+      "folder": "/Users/joseph/github/news-response"
+    },
+    {
+      "name": "teaching-plan",
+      "display": "AI 教案",
+      "keywords": ["教案", "teaching", "課程", "教學", "lesson", "workshop"],
+      "folder": null
+    },
+    {
+      "name": "enterprise-automation",
+      "display": "企業自動化解決方案",
+      "keywords": ["企業", "自動化", "enterprise", "automation", "workflow", "解決方案"],
+      "folder": null
+    }
+  ]
+}

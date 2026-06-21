@@ -1,0 +1,37 @@
+name: Claude PR agent
+
+# 在 Issue / PR / 留言中 @claude，即由 Claude Code 讀懂需求、改檔、開或更新 PR。
+# 典型用法（對應你 PDF 第 20–21 頁）：
+#   開 Issue 貼上新聞事件，留言：
+#   @claude 針對這則新聞，在「涉及物質」勾選區新增「永續航空燃油（SAF）」選項，
+#           並在 rag_context.json 新增對應的 RAG 範例條目，然後開 PR。
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+
+jobs:
+  claude:
+    # 只回應人類、且內容含 @claude，避免機器人自我觸發無限迴圈
+    if: |
+      github.event.sender.type != 'Bot' &&
+      (contains(github.event.comment.body, '@claude') ||
+       contains(github.event.issue.body, '@claude'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}

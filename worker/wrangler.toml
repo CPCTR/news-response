@@ -1,0 +1,13 @@
+name = "news-response-llm"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# 非機密設定可放這裡（機密請用 `wrangler secret put`）
+[vars]
+ALLOWED_ORIGIN = "https://news-response.launchdock.app"  # ← 改成你的 Pages 網域
+GH_MODEL = "openai/gpt-4o"                                # ← GitHub Models 模型 id（到 catalog 確認）
+ANTHROPIC_MODEL = "claude-sonnet-4-6"                     # 備援模型
+
+# 機密（不要寫在這裡，用指令設定）：
+#   wrangler secret put GITHUB_TOKEN        # GitHub PAT，需 models:read
+#   wrangler secret put ANTHROPIC_API_KEY   # 備援，可省略

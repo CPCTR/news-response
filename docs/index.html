@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>桃園煉油廠 新聞說明稿快速編輯程式</title>
+<style>
+  :root{ --cpc:#003399; --cpc2:#0b57d0; --bg:#f4f6fb; --line:#dfe3ec; --ok:#137333; --warn:#b3261e; --muted:#5f6571; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;background:var(--bg);color:#1a1c20;line-height:1.6}
+  header{background:var(--cpc);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  header h1{font-size:17px;margin:0;font-weight:700}
+  header .org{font-size:11px;opacity:.85;line-height:1.2}
+  .tabs{display:flex;gap:6px;margin-left:8px}
+  .tab{padding:5px 12px;border-radius:7px 7px 0 0;background:rgba(255,255,255,.12);color:#fff;cursor:pointer;font-size:13px;border:0}
+  .tab.on{background:#fff;color:var(--cpc);font-weight:700}
+  .ver{margin-left:auto;font-size:12px;opacity:.85}
+  .wrap{max-width:1240px;margin:0 auto;padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .col{display:flex;flex-direction:column;gap:14px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}
+  .card h2{font-size:14px;margin:0 0 10px;color:var(--cpc);border-left:4px solid var(--cpc);padding-left:8px;display:flex;align-items:center;gap:8px}
+  .req{background:#e8f0fe;color:var(--cpc2);font-size:11px;padding:1px 7px;border-radius:999px;font-weight:700}
+  .danger{background:#fde8e6;color:var(--warn);font-size:11px;padding:1px 7px;border-radius:999px;font-weight:700}
+  label{font-size:13px;color:var(--muted);display:block;margin:6px 0 4px}
+  textarea,input,select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;font-size:14px;font-family:inherit;background:#fff}
+  textarea{resize:vertical}
+  .chk{display:flex;gap:8px;align-items:center;padding:5px 8px;border:1px solid var(--line);border-radius:7px;margin:5px 0;background:#fafbfe;cursor:pointer}
+  .chk:hover{border-color:var(--cpc2)}
+  .chk input{width:auto;margin:0}.chk span{font-size:13.5px;color:#1a1c20}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .other{margin-top:4px}
+  button{background:var(--cpc2);color:#fff;border:0;border-radius:7px;padding:9px 16px;font-size:14px;cursor:pointer;font-weight:600}
+  button:hover{filter:brightness(1.08)} button.ghost{background:#eef1f8;color:var(--cpc)} button.sm{padding:5px 10px;font-size:12px}
+  button.ok{background:var(--ok)} button.block{width:100%;padding:12px;font-size:15px;margin-top:4px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .muted{color:var(--muted);font-size:12px}
+  .toolbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-bottom:8px;flex-wrap:wrap}
+  .draftbox{min-height:380px}
+  .warnbox{background:#fff7ed;border:1px solid #f0c089;color:#9a3412;padding:8px 10px;border-radius:7px;font-size:13px;margin:8px 0;display:none}
+  .status{font-size:12px;color:var(--muted);margin:8px 0}
+  .sim{background:#eef7ff;border:1px solid #cfe2ff;border-radius:8px;padding:8px 10px;font-size:12.5px;color:#0b3d91;margin:6px 0}
+  .sim b{color:var(--cpc)} .sim .c{display:block;padding:2px 0;border-top:1px dashed #cfe2ff;margin-top:4px}
+  .auditpanel{background:#f7fbf8;border:1px solid #bfe3c9;border-radius:8px;padding:10px 12px;margin-top:8px;white-space:pre-wrap;font-size:13px}
+  .auditpanel.fail{background:#fff5f5;border-color:#f0b9b9}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:6px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:50}
+  .modal .box{background:#fff;border-radius:12px;padding:20px;max-width:520px;width:92%}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--line)}
+  .pill.on{background:#e6f4ea;color:var(--ok);border-color:#bfe3c9}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="org">台灣中油股份有限公司<br/>煉製事業部桃園煉油廠</div>
+  <h1>新聞說明稿快速編輯程式</h1>
+  <div class="tabs">
+    <button class="tab on" id="tabForm" onclick="switchTab('form')">📋 表單填寫模式</button>
+    <button class="tab" id="tabTerm" onclick="switchTab('term')">✍ 術語修正</button>
+  </div>
+  <span class="ver" id="libCount">案例庫：0</span>
+  <span class="ver" style="opacity:.6">V2.1</span>
+</header>
+
+<!-- ========== 表單模式 ========== -->
+<div class="wrap" id="formMode">
+  <!-- 左：結構化表單 -->
+  <div class="col">
+    <div class="card">
+      <h2>📋 基本資訊 <span class="req">必填</span></h2>
+      <label>事件發生時間 *</label>
+      <input type="datetime-local" id="evtTime"/>
+      <label>通報來源</label>
+      <select id="source" onchange="toggleOther('source')">
+        <option value="">— 請選擇 —</option>
+        <option>本廠主動發現</option><option>消防局通知</option><option>環保局通知</option>
+        <option>民眾陳情</option><option value="__other">其它（自行輸入）</option>
+      </select>
+      <input class="other" id="source_other" placeholder="請輸入通報來源" style="display:none"/>
+    </div>
+
+    <div class="card">
+      <h2>📍 地點或設備</h2>
+      <div class="grid2" data-group="loc"></div>
+      <input class="other" id="loc_other" placeholder="請輸入其它地點或設備名稱" style="display:none"/>
+    </div>
+
+    <div class="card">
+      <h2>🛢 涉及物質</h2>
+      <div class="grid2" data-group="mat"></div>
+      <input class="other" id="mat_other" placeholder="請輸入物質名稱" style="display:none"/>
+    </div>
+
+    <div class="card">
+      <h2>🔍 原因</h2>
+      <div class="grid2" data-group="cause"></div>
+      <input class="other" id="cause_other" placeholder="請輸入其它原因" style="display:none"/>
+    </div>
+
+    <div class="card">
+      <h2>📊 目前情況</h2>
+      <div class="grid2" data-group="status"></div>
+      <input class="other" id="status_other" placeholder="請輸入其它情況說明" style="display:none"/>
+    </div>
+
+    <div class="card">
+      <h2>🛠 處置方式</h2>
+      <div data-group="handle"></div>
+      <input class="other" id="handle_other" placeholder="請輸入其它處置方式" style="display:none"/>
+    </div>
+
+    <div class="card">
+      <h2>⚠ 高風險欄位 <span class="danger">禁止缺漏</span></h2>
+      <label>人員傷亡狀況 *</label>
+      <select id="casualty">
+        <option value="">— 請選擇 —</option>
+        <option>無人員傷亡</option><option>有人員受傷（輕傷）</option><option>有人員受傷（重傷）</option>
+        <option>有人員死亡</option><option>疑似中毒，送醫觀察中</option><option>待確認</option>
+      </select>
+      <label>是否已通報桃園市政府環保局 *</label>
+      <select id="reported">
+        <option value="">— 請選擇 —</option>
+        <option>已通報</option><option>尚未通報</option><option>不需通報（廠內事件）</option>
+      </select>
+    </div>
+
+    <div class="card">
+      <h2>📝 補充說明</h2>
+      <div data-group="stmt"></div>
+      <label style="margin-top:8px">自由補充說明</label>
+      <textarea id="freeNote" rows="3" placeholder="例：指揮官為廠長○○○、初步研判為硫化鐵自燃、外洩量…（請勿填寫個資）"></textarea>
+      <div class="warnbox" id="piiWarn"></div>
+    </div>
+
+    <button class="block" onclick="generate('draft')">⚡ 生成新聞初稿</button>
+    <div class="row" style="margin-top:8px">
+      <button class="ghost sm" onclick="clearAll()">🗑 清除全部欄位</button>
+      <button class="ghost sm" onclick="openSettings()">⚙ API 設定</button>
+    </div>
+  </div>
+
+  <!-- 右：草稿 -->
+  <div class="col">
+    <div class="card" style="position:sticky;top:16px">
+      <div class="toolbar">
+        <h2 style="margin:0;border:0;flex:1">📄 生成的新聞說明稿草稿</h2>
+        <span class="pill on" id="ragPill" onclick="toggleRag()">📚 RAG 啟用</span>
+        <button class="ok sm" onclick="copyDraft()">📋 複製</button>
+        <button class="ghost sm" onclick="shareLine()">💬 LINE</button>
+        <button class="ghost sm" onclick="document.getElementById('draft').value=''">✕ 清除</button>
+      </div>
+      <div id="simCases" style="display:none"></div>
+      <textarea id="draft" class="draftbox" placeholder="填寫左側欄位後，點擊「生成新聞初稿」即可在此顯示可編輯的草稿。&#10;&#10;生成後可直接在此修改內容，完成後點擊「複製」或「生成新聞稿（正式版）」。"></textarea>
+      <div class="status"><span class="dot"></span><span id="status">準備就緒</span><span id="charCount" style="float:right"></span></div>
+      <div id="auditBox" style="display:none"></div>
+      <div class="row">
+        <input id="rewritePrompt" placeholder="加入修改提示詞，例：語氣再溫和些 / 補上回收量待確認" style="flex:1"/>
+        <button class="ghost sm" onclick="generate('rewrite')">↻ 套用修改</button>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <button class="ghost sm" onclick="audit()">✅ 校正稽核（自我修正）</button>
+        <button class="ok sm" onclick="learnFromDraft()">📥 採用並學習</button>
+        <button class="ghost sm" onclick="exportLib()">⬇ 匯出案例庫</button>
+        <label class="ghost sm" style="cursor:pointer;margin:0;color:var(--cpc);padding:5px 10px;border-radius:7px;background:#eef1f8">⬆ 匯入<input type="file" accept="application/json" onchange="importLib(this)" style="display:none"></label>
+      </div>
+      <button class="block" onclick="generate('formal')">🖼 生成新聞稿（正式版）</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 術語修正模式 ========== -->
+<div class="wrap" id="termMode" style="display:none;grid-template-columns:1fr">
+  <div class="card">
+    <h2>✍ 術語修正</h2>
+    <p class="muted">貼上文字，依石化廠用語規範修正（如：瓦斯→液化石油氣、漏氣→氣體外洩、爆炸→事故等），並標出不宜對外的措辭。</p>
+    <textarea id="termIn" rows="10" placeholder="貼上要檢查的文字…"></textarea>
+    <div class="row" style="margin-top:8px"><button onclick="fixTerms()">修正術語</button><span class="status" id="termStatus"></span></div>
+    <label style="margin-top:10px">修正結果</label>
+    <textarea id="termOut" rows="10"></textarea>
+    <button class="ghost sm" style="margin-top:6px" onclick="copyEl('termOut')">📋 複製結果</button>
+  </div>
+</div>
+
+<!-- 設定 modal -->
+<div class="modal" id="settings"><div class="box">
+  <h2 style="color:var(--cpc);margin-top:0">⚙ API 設定（皆只存於本機 localStorage）</h2>
+  <label>後端模式</label>
+  <select id="backend" onchange="toggleBackend()">
+    <option value="worker">Worker 代理（GitHub Models 免費為主，推薦）</option>
+    <option value="direct">瀏覽器直連 Anthropic（自帶金鑰）</option>
+  </select>
+  <div id="workerCfg" style="margin-top:8px">
+    <label>Worker Endpoint</label>
+    <input id="workerUrl" placeholder="https://news-response-llm.你的帳號.workers.dev"/>
+    <p class="muted">金鑰留在 Worker，不會出現在瀏覽器。</p>
+  </div>
+  <div id="directCfg" style="display:none;margin-top:8px">
+    <label>Anthropic API Key</label><input id="apiKey" type="password" placeholder="sk-ant-…"/>
+    <label>模型</label><input id="modelDraft" value="claude-sonnet-4-6"/>
+  </div>
+  <div class="row" style="justify-content:flex-end;margin-top:14px">
+    <button class="ghost" onclick="closeSettings()">取消</button>
+    <button onclick="saveSettings()">儲存</button>
+  </div>
+</div></div>
+
+<script type="application/json" id="kb">{
+  "meta": {
+    "name": "桃園煉油廠新聞稿生成知識庫",
+    "version": "1.0",
+    "source": "約210份內部速報與對外新聞稿/聲明稿 (2017-2025)",
+    "deidentified": true,
+    "note": "本檔為去識別化衍生物，可進git。原始文件不進git。生成時仍須遵守憲法條目六，不得將個資寫入對外稿。",
+    "usage": "供 Sonnet 生成、Opus 校正時載入。事件分類→爭點/回應基調/是否對外/few-shot。"
+  },
+
+  "official_templates": {
+    "press_release": {
+      "desc": "對外新聞稿/聲明稿官方版型",
+      "header_line1": "台灣中油股份有限公司煉製事業部桃園煉油廠",
+      "header_line2": "新 聞 資 料 NEWS LETTER",
+      "headline_principle": "標題通常直接把結論或回應基調寫進去，安撫性或澄清性（例：『初驗水質符合排放標準』『未受地震影響，廠區正常操作，請勿轉傳不實消息』）。",
+      "date_format": "民國年制（例：112年3月8日）",
+      "opening_patterns": ["有關媒體報導：…，說明如下：", "有民眾反應…，本廠…", "有關近日…事件，…說明如下："],
+      "closing_patterns": ["本廠將持續加強工安、環保工作，…努力做個好鄰居。", "民眾如有任何疑問，歡迎使用1912台灣中油免付費客服電話查詢。"],
+      "footer_template": "台灣中油股份有限公司\n煉製事業部桃園煉油廠\n發言人：○○○ 副廠長    新聞聯絡人：○○○ 課長\n聯絡電話：03-3255111轉2007    03-3255111轉3661",
+      "footer_note": "發言人固定為副廠長層級；新聞聯絡人(課長)會隨時間更換。個人手機不寫入對外稿。"
+    },
+    "incident_report": {
+      "desc": "災害及緊急事件速報表（對內事實底稿，新聞稿的輸入）",
+      "fields": ["報別(未結報/結報・第N報)", "通報部門", "事件名稱", "發生地點", "發生時間", "速報時間", "事件類別(災害/預防性通報)", "事件等級(丙級等)", "發生原因/訴求事項", "現場狀況", "處理情形/擬採對策", "緊急應變中心成立/解除時間", "人員傷亡(死亡/受傷/失蹤×員工/承攬商/其他)", "通報勞檢環保警消情形", "媒體關切或報導情形", "財物損失"],
+      "pii_fields_to_strip": ["現場指揮官手機", "承辦人手機/員編", "收件者名單(姓名/員編/手機)"]
+    },
+    "triage_form": {
+      "desc": "輿情預警/突發新聞事件通報表（對外回應決策表）",
+      "fields": ["日期", "單位", "議題", "主要爭點", "回應基調", "預擬回應內容", "有無媒體/地方意見領袖/民代關切(含關切重點)", "建議處理方式"],
+      "approval_chain": ["擬稿人", "核稿主管", "單位發言人"]
+    }
+  },
+
+  "global_response_principles": [
+    "事實可溯源：所有具體數字/設備/時間須來自速報或使用者輸入，無來源標[待確認]。",
+    "危機初期不認責、不臆測原因、不承諾賠償，用『調查中/釐清原因/配合主管機關』。",
+    "敏感數據(傷亡/污染)以官方公告為準，不搶在主管機關前發布。",
+    "用詞謹慎：未確認事項用『疑似/初步/調查中』。",
+    "語氣嚴肅負責、以社區與員工安全為先，結語常以『好鄰居/持續加強工安環保』收束。",
+    "個資(手機/員編/姓名)不得寫入對外稿；人名僅以姓氏+職稱呈現。",
+    "AI只產草稿，須經人工核准，不自動發布。"
+  ],
+
+  "publication_decision": {
+    "desc": "判斷是否要對外發新聞稿。依據來自速報『媒體關切』欄+通報表『有無關切』欄+事件等級+廠外影響。",
+    "issue_external_if_any": [
+      "已有媒體/民代/地方意見領袖關切或報導",
+      "影響擴及廠外(社區、河川/外海、道路、供油、空品異味)",
+      "涉法律、勞資爭議或司法案件",
+      "有外部目擊或社群流傳(含不實訊息)",
+      "人員重大傷亡或環境重大事件"
+    ],
+    "internal_only_if_all": [
+      "事件等級為丙級或預防性通報",
+      "媒體關切=無",
+      "無廠外影響、限於廠內製程",
+      "無重大人員傷亡"
+    ],
+    "proactive_non_crisis": ["公益/睦鄰/CSR", "首長視察", "演習澄清", "破除不實訊息"],
+    "examples_internal_only": ["變電站跳電(廠內)", "鍋爐跳車停爐(無外洩)", "設備振動預防性通報", "員工身體不適送醫", "員工上下班通勤車禍"],
+    "note": "2025年大量速報屬此類，未對外發稿——是訓練『不亂發稿』的負樣本。"
+  },
+
+  "event_types": [
+    {
+      "id": "process_equipment",
+      "name": "設備/製程事故",
+      "definition": "廠內生產設備異常、跳車、停爐、跳電、控制系統故障、設備振動/滲漏。",
+      "typical_disputes": ["是否影響供油", "是否有外洩或公安疑慮", "是否影響周邊"],
+      "response_tone": "已第一時間控制、無安全疑慮、不影響對外供油、配合查修、持續監控。",
+      "public_default": "多為對內速報；涉供電中斷或外部觀感才對外。",
+      "severity_pattern": "丙級為主，預防性通報常見。",
+      "cases": [
+        {"date": "2024-12-29", "title": "四、五號鍋爐跳車造成工場停爐", "summary": "蒸氣來源中斷致R1/二柴/重油轉化等工場改循環操作，無人員傷亡。"},
+        {"date": "2025-05-04~19", "title": "重油轉化工場膨脹機GE-7201振動過高", "summary": "預防性通報，第1報追蹤至結報。"},
+        {"date": "2023-08-16", "title": "變電站主開關跳電", "summary": "出新聞稿+QA+時間表，屬對外案例。"}
+      ],
+      "few_shot_files": ["1120816桃廠變電站主開關跳電新聞稿V2.2.docx", "1120816桃廠變電站主開關跳電QA.docx"]
+    },
+    {
+      "id": "oil_pipeline_leak",
+      "name": "漏油/管線洩漏",
+      "definition": "廠內外管線破裂、第三方施工挖損、油品洩漏、外海/水體油污、油罐車事故。",
+      "typical_disputes": ["洩漏來源是否為本廠", "環境影響範圍", "處置與通報是否即時", "責任歸屬"],
+      "response_tone": "第一時間控制(克漏/頂油置換)、成立前進指揮中心、釐清來源(本廠/第三方)、已通報環保局等、環境持續監測、無人員傷亡、不臆測責任。",
+      "public_default": "對外敏感度高，常多時點迭代(1500/1520/1530)。",
+      "severity_pattern": "丙級至更高；涉廠外時升級。",
+      "cases": [
+        {"date": "2022-12-19", "title": "內湖汽油管洩漏", "summary": "5版迭代，1500/1520/1530密集修版。"},
+        {"date": "2023-04-26", "title": "台15線29K改管工程事件", "summary": "v1→v7，多時點。"},
+        {"date": "2025-04-25", "title": "台電鑽探施工致長途管線受損", "summary": "台電改引孔鑽破本廠12吋長途管線(半成品油)，克漏完成、頂油置換、成立應變中心，第1報→第4報追蹤。"},
+        {"date": "2025-03-15~16", "title": "大園三民路地下管線疑破裂漏油", "summary": "成立前進指揮中心、停止油品輸送、通報環保局與經發局，第1報→結報。"}
+      ],
+      "few_shot_files": ["1111219內湖汽油管洩漏新聞稿1530.docx", "1100730有關南崁溪不明泡沬還在調查中聲明稿.docx"]
+    },
+    {
+      "id": "safety_health",
+      "name": "工安/人員傷亡與健康",
+      "definition": "員工作業受傷、化學品接觸、身體不適送醫、上下班交通事故。",
+      "typical_disputes": ["是否廠區作業所致", "傷者狀況", "工安責任"],
+      "response_tone": "以人員安全為先、即時送醫、持續關懷追蹤；區分廠區作業事故與通勤事故。",
+      "public_default": "多為對內速報；重大傷亡或媒體關切才對外。",
+      "severity_pattern": "丙級為主。",
+      "cases": [
+        {"date": "2025-03-12", "title": "轉化處理工場員工作業時遭鹼液噴濺", "summary": "丁姓員工面部遭鹼液噴濺，診療所清洗後送長庚，第1報→結報返家休養。"},
+        {"date": "2025-01-03", "title": "R1鍾姓同仁突然身體不適送醫", "summary": "第1報→結報。"},
+        {"date": "2025-03-25", "title": "涂姓員工通勤車禍", "summary": "高速公路桃園路段，通勤事故非廠區工安。"}
+      ],
+      "few_shot_files": []
+    },
+    {
+      "id": "environment",
+      "name": "環保/污染爭議",
+      "definition": "土壤污染、水污染、環境觀感、不明泡沫/油污、環評。",
+      "typical_disputes": ["污染源是否為本廠", "是否符合排放標準", "對居民健康影響"],
+      "response_tone": "用詞謹慎(疑似/初步/調查中)、立即派員配合環保局取樣、提出初步化驗數據、加派巡查、預防性措施(如佈設攔油索)、不搶在主管機關前下結論。",
+      "public_default": "幾乎都對外，常涉媒體與民代。",
+      "severity_pattern": "中高，輿論敏感。",
+      "cases": [
+        {"date": "2021-07-30", "title": "南崁溪不明泡沫", "summary": "接獲通知立即派員、配合環保局取樣、初驗PH/溫度/重金屬正常、加派巡查、廠商待命備佈攔油索。"},
+        {"date": "2023-08", "title": "週刊報導全台水污染評比", "summary": "V1→V2。"},
+        {"date": "2024-05-16", "title": "國光二期土污", "summary": "v1→v5，另有說明稿。"}
+      ],
+      "few_shot_files": ["1100730有關南崁溪不明泡沬還在調查中聲明稿.docx"]
+    },
+    {
+      "id": "labor_union",
+      "name": "勞資/工會/訴訟",
+      "definition": "工會主張、勞工權益、派遣議題、民事訴訟與法院判決。",
+      "typical_disputes": ["勞動條件/年資/特休", "派遣與承攬", "個案司法爭議"],
+      "response_tone": "尊重勞動權益與司法、陳述公司既有作為與依法處理、提具體事證、不評論個案細節、期盼協商三贏。",
+      "public_default": "對外且法律敏感，措辭須法遵審。",
+      "severity_pattern": "中，持續性議題。",
+      "cases": [
+        {"date": "2023-08-03", "title": "臺灣石油工會第六分會就勞務司機抗爭說明", "summary": "陳述監察院糾正後落實年資併計、訪查證明特休已累計、對抗爭遺憾、盼重回協商。"},
+        {"date": "2021-07-07", "title": "朱君與桃廠民事訴訟案聲明", "summary": "另有地院判決新聞稿。"},
+        {"date": "2023-07-25", "title": "許姓林姓勞工爭取勞動權益", "summary": "含督導核定版。"}
+      ],
+      "few_shot_files": ["1120803有關臺灣石油工會第六分會主張新聞稿.docx"]
+    },
+    {
+      "id": "protest",
+      "name": "陳抗/民眾爭議",
+      "definition": "地方民眾、里長、社團到廠陳情抗議。",
+      "typical_disputes": ["地方訴求", "睦鄰", "回饋措施"],
+      "response_tone": "肯定溝通、說明已採或將採措施、持續睦鄰。",
+      "public_default": "對外；速報需載明領隊/參與民代/抗議人數。",
+      "severity_pattern": "中。",
+      "cases": [
+        {"date": "2020-06", "title": "五股區里長聯誼會陳抗", "summary": "含桃廠版。"},
+        {"date": "2021-03-15", "title": "更竂里陳抗事件", "summary": ""},
+        {"date": "2023-09-24", "title": "汴洲民眾陳抗事件", "summary": "V1→定版。"}
+      ],
+      "few_shot_files": ["1120924汴洲民眾陳抗事件新聞稿.docx"]
+    },
+    {
+      "id": "media_response",
+      "name": "媒體報導回應/立場聲明",
+      "definition": "針對特定媒體報導或外界質疑的澄清稿、立場與永續聲明。",
+      "typical_disputes": ["報導是否屬實", "公司立場", "轉型/永續作為"],
+      "response_tone": "先還原事實再說明立場與作為、用『澄清/說明』而非對抗、結語回到好鄰居/永續。",
+      "public_default": "對外。",
+      "severity_pattern": "中，視議題。",
+      "cases": [
+        {"date": "2023-03-08", "title": "桃廠以環境永續為目標與地方共存共榮", "summary": "回應轉型創新大樓報導，述2050淨零策略、關鍵基礎設施角色、吸收油價波動約469.67億元、做好鄰居。多時點2000/2030/2035/2050迭代。"},
+        {"date": "2021-05", "title": "媒體報導某消防承攬商事件", "summary": "3版。"},
+        {"date": "2022-06", "title": "宿舍管理回應", "summary": ""}
+      ],
+      "few_shot_files": ["1120308桃廠與地方共存共榮聲明稿2050.docx"]
+    },
+    {
+      "id": "fake_news",
+      "name": "不實訊息澄清",
+      "definition": "社群流傳關於本廠的變造/惡意不實訊息(如爆炸、管線破裂謠言)。",
+      "typical_disputes": ["訊息真偽", "廠區是否正常", "散布法律責任"],
+      "response_tone": "明確澄清不實、已通報政風/警察/台灣事實查核中心、籲民眾勿轉傳以免觸法、強調安全連鎖裝置與廠區正常操作、提供1912客服。",
+      "public_default": "對外，主動澄清。",
+      "severity_pattern": "視擴散程度。",
+      "cases": [
+        {"date": "2024-04(演習)", "title": "桃園煉油廠未受地震影響，請勿轉傳不實消息", "summary": "CI演習腳本：社群出現變造停爐畫面散布管線破裂/爆炸惡意訊息，澄清不實、已通報查處、籲勿轉傳。"}
+      ],
+      "few_shot_files": ["1130705CI演習假消息新聞稿.docx"]
+    },
+    {
+      "id": "official_visit",
+      "name": "政要視察/民代質詢",
+      "definition": "首長視察、立委質詢答復、主管機關安檢。",
+      "typical_disputes": ["改善作為", "遷廠議題", "環保表現"],
+      "response_tone": "正面、配合、展現改善作為與數據。",
+      "public_default": "對外(視察/CSR性質)；安檢多為速報。",
+      "severity_pattern": "低至中。",
+      "cases": [
+        {"date": "2024-02-06", "title": "經濟部長視察桃園煉油廠", "summary": "V1→V3。"},
+        {"date": "2022-09-27", "title": "委員遷廠議題回應", "summary": "含rev1。"},
+        {"date": "2025-02~03", "title": "職安署署長帶隊聯合安全檢查", "summary": "速報第1報→結報。"}
+      ],
+      "few_shot_files": []
+    },
+    {
+      "id": "csr",
+      "name": "公益/睦鄰/CSR",
+      "definition": "捐贈、睦鄰宣導、捐血、關懷弱勢等主動正面發布。",
+      "typical_disputes": [],
+      "response_tone": "溫暖、在地連結、具體受益對象與數字。",
+      "public_default": "對外主動發布；部分為採訪通知文體。",
+      "severity_pattern": "無(正面)。",
+      "cases": [
+        {"date": "2023-02-23", "title": "華山基金會睦鄰宣導", "summary": ""},
+        {"date": "2023-12-19", "title": "桃廠捐血", "summary": ""},
+        {"date": "2022-02-16", "title": "關懷弱勢支持在地農民", "summary": ""}
+      ],
+      "few_shot_files": []
+    },
+    {
+      "id": "drill",
+      "name": "緊急應變演習腳本",
+      "definition": "演習用『假事件』新聞稿腳本，等於預先寫好的危機情境+對應口徑，可作生成器few-shot與測試題。",
+      "typical_disputes": ["(視劇本)外海洩漏/化學物污染/不明爆裂物/假消息"],
+      "response_tone": "依對應真實事件類型的基調。",
+      "public_default": "演習用，標註『配合CIP演習用』。",
+      "severity_pattern": "演練。",
+      "cases": [
+        {"date": "2017-08-09", "title": "CIP演習新聞稿一~五+桃市版", "summary": "6份。"},
+        {"date": "2022-06-08", "title": "外海浮筒遭不明爆裂物破壞", "summary": ""},
+        {"date": "2023-09-18", "title": "生活用水遭放置不明化學物", "summary": ""},
+        {"date": "2024-12-31", "title": "VGO開爐前演習管線洩漏燃燒", "summary": ""}
+      ],
+      "few_shot_files": ["1130705CI演習假消息新聞稿.docx", "1110608CIP演習資料外海浮筒遭不明爆裂物破壞新聞稿.docx"]
+    }
+  ],
+
+  "few_shot_examples": [
+    {
+      "event_type": "environment",
+      "title": "有民眾反應南崁溪出現不明泡沫，初驗水質符合排放標準",
+      "date": "110年7月30日",
+      "body": "有民眾反應南崁溪水出現異常氣味及白色泡沫，本廠接獲通知後，立即派員到現場，並配合桃園市政府環保局人員到場取樣，初步化驗結果：PH值、溫度、重金屬檢測均正常。環保局人員表示：今晚將進行二次採樣化驗工作。為求慎重，本廠已加派環保人員於現場巡查，並請維修廠商待命，必要時將進行預防性佈設攔油索的應變措施，務必做好環境保護工作。",
+      "why_good": "標題即帶安撫結論；用『初步/初驗』謹慎措辭；強調立即派員+配合主管機關+加派巡查+預防性措施；不下最終結論。"
+    },
+    {
+      "event_type": "media_response",
+      "title": "桃廠以環境永續為目標，與地方共存共榮",
+      "date": "112年3月8日",
+      "body": "有關媒體報導：桃廠規劃興建中油轉型創新大樓，說明如下：為達成2050淨零排放，中油公司以優油、減碳、潔能為前提，制定轉型策略方針。桃廠以環境永續、企業永續、社區參與為目標，地方需求為優先考量，結合地方創生、共同打造淨零轉型循環建築。…桃廠屬於一級國家關鍵基礎設施，平時提供台中之北的民生、工業用油；戰時生產軍用車輛及飛機所需的油料。本廠將持續加強工安、環保工作，穩定提供國內所需油料與朝向淨零轉型友善環境，努力做個好鄰居。",
+      "why_good": "起手式『有關媒體報導…說明如下』；先立場後作為；結語回到工安環保+好鄰居。"
+    },
+    {
+      "event_type": "fake_news",
+      "title": "桃園煉油廠未受地震影響，廠區正常操作，請勿轉傳不實消息，以免觸法",
+      "date": "113年4月11日",
+      "body": "今日11時，於某社群媒體等網站，發現關於本廠不實消息，將本廠廠區停爐畫面加工變造以散布管線破裂、工場爆炸等惡意訊息。本廠特此澄清，該訊息為不實，請民眾勿輕信轉傳。本廠已通報政風及警察單位查處，以及台灣事實查核中心澄清。提醒民眾請勿轉傳及散布，以免觸法。本廠煉製設備均備有安全連鎖裝置，以應付各種緊急情況，廠區正常操作。民眾如有任何疑問，歡迎使用1912台灣中油免付費客服電話查詢。",
+      "why_good": "標題直接澄清；明確指出不實+已通報查處管道(政風/警察/事實查核中心)；籲勿轉傳以免觸法；強調安全裝置與正常操作；附1912客服。"
+    }
+  ]
+}
+</script>
+<script type="text/markdown" id="rubric"># 新聞稿合規稽核 Rubric（由 Opus 撰寫，供 Sonnet 執行）
+
+你是台灣中油桃園煉油廠的新聞稿稽核員。職責是依《憲法》逐條守門，**只就合規性把關，不改寫風格偏好**。
+任一條 ❌ 即判「退回」。判斷時對照下列「正例 ✅／反例 ❌」，不要只看字面。
+
+## 1. 責任分際（最高優先）
+原因未明階段：不認責、不臆測原因、不承諾賠償。
+- ❌「因設備老舊導致洩漏」「本廠疏失造成」「將全額賠償損失」
+- ✅「事故原因仍在調查中」「將配合主管機關釐清原因」「對於造成民眾困擾深感抱歉」（致歉 ≠ 認責，可保留）
+- 注意區分：「深感抱歉/造成不便」可用；「我方過失/責任在本廠」不可用。
+
+## 2. 事實可溯源
+具體數字／設備編號／時間，若非來自使用者輸入，一律標 `[待確認]`，禁止虛構。
+- ❌「已回收約 500 公升」（來源不明卻寫死）
+- ✅「已回收油料約 [待確認] 公升，回收持續進行中」
+
+## 3. 敏感數據不搶發
+傷亡、污染數據以主管機關官方公告為準，不搶在其前發布。
+- ❌「確認 3 人輕傷、無污染」（官方未公告前）
+- ✅「人員送醫狀況以院方與主管機關公告為準」
+
+## 4. 法規與單位正確
+主管機關名稱正確（桃園市政府環保局、勞檢處/職業安全衛生署、消防局等）；不確定標 `[待法遵確認]`。
+
+## 5. 語氣
+嚴肅負責、社區與員工安全優先。
+- ❌ 淡化：「只是小狀況，無需擔心」；聳動：「廠區發生爆炸」
+- ✅ 中性事實：「廠區發生氣體外洩事故，已啟動緊急應變」
+
+## 6. 法律自認
+不得出現構成過失自認的措辭（同第 1 條，但特別檢查法律意涵字眼：疏失、違規、未依規定、肇因於本廠）。
+
+## 7. 隱私
+不得出現個資（手機、員編、姓名）；人名一律以職稱或 ○○○ 表示。
+
+## 8. 草稿標示
+全文須可看出為「草稿，待人工核准」，不得含自動發布語意。
+
+---
+
+## 輸出格式（嚴格依此）
+```
+【稽核結果】通過 / 退回
+【違反條目】（退回時）條目編號 + 草稿中的具體位置 + 問題
+【修正後定稿】（通過或修正後全文）
+【人工須確認】所有 [待確認] / [待法遵確認] 清單
+```
+</script>
+<script>
+// ===== 選項（AI 可直接在此 HTML 新增 keyword；下方陣列驅動勾選框）=====
+const OPTIONS = {
+  loc:   ["廠區","廠區廢水工場","廠區煉製工場區","沙崙外海","沙崙油庫","五股油庫","長途管線","廠區外"],
+  mat:   ["航空燃油（Jet A-1）","永續航空燃油（SAF）","低硫燃料油（LSFO）","液化石油氣（LPG）","硫化氫（H2S）","重油","柴油","原油","廢水","廢氣"],
+  cause: ["設備故障","天然災害","原因仍待查證中","管線洩漏","安全連鎖裝置作動"],
+  status:["已成立緊急應變中心","已排除","維修人員正在趕往現場","環保人員正在趕往現場","工安人員正在趕往現場","正在處理中"],
+  handle:["管線已關閉","進行搶修中","現場已佈設攔油索及除油設備","配合環保局稽查人員處理中","消防車於現場灑水灌救中","回收油料中"],
+  stmt:  ["對於造成民眾困擾，桃廠深感抱歉","桃廠將以最快的速度復原","全力搶修以穩定供油","桃廠肩負供應台中以北所需油料"],
+};
+const HAS_OTHER = ["loc","mat","cause","status","handle"]; // 這些群組有「其它」自填
+
+const KB = (()=>{try{return JSON.parse(document.getElementById('kb').textContent)}catch{return{}}})();
+const RUBRIC = document.getElementById('rubric').textContent;
+const PII = /(09\d{2}[-\s]?\d{3}[-\s]?\d{3})|(\(0\d\)\s?\d{6,8})|(0\d-\d{6,8})|(員編\s*[:：]?\s*\w+)/g;
+
+const CONSTITUTION = `你必須嚴守以下憲法（凌駕一切）：
+1.事實可溯源：具體數字/設備/時間只能來自使用者輸入；無來源者標[待確認]，禁止虛構。
+2.危機初期不認責、不臆測原因、不承諾賠償，用「調查中/釐清原因/配合主管機關」。
+3.敏感數據（傷亡/污染）以官方公告為準，不搶在主管機關前發布。
+4.法規與主管機關名稱須正確（環保局、勞檢處/職安署、消防局等），不確定標[待法遵確認]。
+5.語氣嚴肅負責、以社區與員工安全為先；個資（手機/員編/姓名）一律不得寫入對外稿，人名僅以職稱表示。
+6.只產草稿，須經人工核准。`;
+
+// ===== 建立勾選框 =====
+function buildChecks(){
+  document.querySelectorAll('[data-group]').forEach(box=>{
+    const g=box.dataset.group;
+    box.innerHTML=OPTIONS[g].map((t,i)=>
+      `<label class="chk"><input type="checkbox" data-g="${g}" value="${t}"><span>${t}</span></label>`).join('')
+      + (HAS_OTHER.includes(g)?`<label class="chk"><input type="checkbox" id="${g}_otherck" onchange="document.getElementById('${g}_other').style.display=this.checked?'block':'none'"><span>其它：</span></label>`:'');
+  });
+}
+function toggleOther(id){const s=document.getElementById(id);document.getElementById(id+'_other').style.display=s.value==='__other'?'block':'none';}
+function picked(g){
+  const arr=[...document.querySelectorAll(`input[data-g="${g}"]:checked`)].map(c=>c.value);
+  const o=document.getElementById(g+'_other'); if(o&&o.style.display!=='none'&&o.value.trim())arr.push(o.value.trim());
+  return arr;
+}
+
+// ===== tabs / settings =====
+function switchTab(t){
+  formMode.style.display=t==='form'?'grid':'none'; termMode.style.display=t==='term'?'grid':'none';
+  tabForm.classList.toggle('on',t==='form'); tabTerm.classList.toggle('on',t==='term');
+}
+function openSettings(){settings.style.display='flex';}
+function closeSettings(){settings.style.display='none';}
+function toggleBackend(){const w=backend.value==='worker';workerCfg.style.display=w?'block':'none';directCfg.style.display=w?'none':'block';}
+function saveSettings(){localStorage.setItem('cfg',JSON.stringify({backend:backend.value,worker:workerUrl.value,k:apiKey.value,md:modelDraft.value}));closeSettings();}
+function loadSettings(){const c=JSON.parse(localStorage.getItem('cfg')||'{}');if(c.backend)backend.value=c.backend;if(c.worker)workerUrl.value=c.worker;if(c.k)apiKey.value=c.k;if(c.md)modelDraft.value=c.md;toggleBackend();}
+let RAG=true; function toggleRag(){RAG=!RAG;ragPill.classList.toggle('on',RAG);ragPill.textContent=RAG?'📚 RAG 啟用':'📚 RAG 關閉';}
+
+// ===== LLM 呼叫（Worker 為主，直連為備援）=====
+async function callLLM(system,user){
+  const cfg=JSON.parse(localStorage.getItem('cfg')||'{}');
+  if((cfg.backend||'worker')==='worker'){
+    if(!cfg.worker){openSettings();throw new Error('請先設定 Worker Endpoint');}
+    const r=await fetch(cfg.worker,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({system,user,max_tokens:2800})});
+    const j=await r.json(); if(!r.ok||j.error)throw new Error('Worker: '+(j.error||r.status)+(j.detail?' / '+j.detail:'')); return j.text;
+  }
+  if(!cfg.k){openSettings();throw new Error('請先設定 API Key');}
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':cfg.k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:cfg.md||'claude-sonnet-4-6',max_tokens:2800,system,messages:[{role:'user',content:user}]})});
+  if(!r.ok)throw new Error('API '+r.status+': '+(await r.text()).slice(0,200));
+  const j=await r.json(); return j.content.map(c=>c.text).join('');
+}
+
+// ===== 組裝表單 → prompt =====
+function collect(){
+  const src=source.value==='__other'?(document.getElementById('source_other').value||'其它'):source.value;
+  return {
+    time:evtTime.value, source:src,
+    loc:picked('loc'), mat:picked('mat'), cause:picked('cause'),
+    status:picked('status'), handle:picked('handle'),
+    casualty:casualty.value, reported:reported.value,
+    stmt:picked('stmt'), note:freeNote.value.trim(),
+  };
+}
+function factsBlock(f){
+  const L=(k,v)=>v&&v.length?`- ${k}：${Array.isArray(v)?v.join('、'):v}`:null;
+  return [
+    L('事件發生時間',f.time), L('通報來源',f.source),
+    L('地點或設備',f.loc), L('涉及物質',f.mat), L('原因',f.cause),
+    L('目前情況',f.status), L('處置方式',f.handle),
+    L('人員傷亡狀況',f.casualty), L('是否已通報環保局',f.reported),
+    L('擬納入立場/承諾',f.stmt), L('自由補充',f.note),
+  ].filter(Boolean).join('\n');
+}
+function ragContext(){
+  if(!RAG||!KB.official_templates)return '';
+  const tp=KB.official_templates.press_release||{};
+  let s=`\n\n【官方版型參考】抬頭：${tp.header_line1||''}／${tp.header_line2||''}；起手式：${(tp.opening_patterns||[]).join('；')}；結語：${(tp.closing_patterns||[]).join('；')}；頁尾：${tp.footer_template||''}`;
+  const fs=(KB.few_shot_examples||[])[0];
+  if(fs)s+=`\n【語氣範例（勿照抄事實）】標題：${fs.title||''}；內文：${(fs.body||'').slice(0,300)}`;
+  return s;
+}
+
+async function generate(mode){
+  // PII 檢查
+  const m=freeNote.value.match(PII);
+  if(m){piiWarn.style.display='block';piiWarn.innerHTML='⚠ 偵測到疑似個資（'+[...new Set(m)].slice(0,3).join('、')+'…），對外稿不會寫入，請先移除或改以職稱表示。';}
+  else piiWarn.style.display='none';
+
+  let system,user;
+  if(mode==='rewrite'){
+    if(!draft.value.trim()){alert('尚無草稿可修改');return;}
+    system=CONSTITUTION+'\n\n你是新聞稿撰稿助理。依使用者修改提示只改被指出處，其餘保留，輸出完整修訂全文。';
+    user=`【目前草稿】\n${draft.value}\n\n【修改提示】\n${rewritePrompt.value||'潤飾語氣，使更嚴謹'}`;
+  }else{
+    const f=collect();
+    if(!f.time){alert('「事件發生時間」為必填');return;}
+    if(!f.casualty||!f.reported){alert('高風險欄位（人員傷亡、是否通報）禁止缺漏');return;}
+    CURRENT.f=f;
+    const formal = mode==='formal';
+    const sims=similarCases(f); renderSims(sims);
+    let learned='';
+    if(sims.length){
+      learned='\n\n【相似歷史案例（本系統已學習，請參考其措辭與結構，勿照抄事實）】\n'
+        + sims.map(s=>`〔${s.id}〕${(s.tags||[]).join('、')}\n${(s.draft||'').slice(0,400)}`).join('\n---\n');
+    }
+    system=CONSTITUTION+`\n\n你是台灣中油桃園煉油廠的新聞稿撰稿助理。`+ragContext();
+    user=`【本次事件要素（使用者勾選/輸入）】\n${factsBlock(f)}${learned}\n\n【任務】`+(formal
+      ? '產出一篇「正式新聞稿」：含官方抬頭、三段式（背景說明→回應說明→改善與承諾）、頁尾發言人區塊（姓名以○○○代）。每個關鍵事實後標(來源:使用者輸入)，無來源標[待確認]，不得寫入個資。'
+      : '產出一篇「新聞初稿」：簡潔、強調事實與安全，三段為宜。每個關鍵事實後標(來源:使用者輸入)，無來源標[待確認]，不得寫入個資。');
+  }
+  setStatus('生成中…',true);
+  try{
+    const out=await callLLM(system,user);
+    draft.value=out; updateCount();
+    setStatus((mode==='formal'?'正式版':mode==='rewrite'?'已套用修改':'初稿')+'生成完成');
+  }catch(e){setStatus('錯誤');alert(e.message);}
+}
+
+async function fixTerms(){
+  if(!termIn.value.trim()){alert('請先貼上文字');return;}
+  termStatus.textContent='修正中…';
+  try{
+    const out=await callLLM(
+      '你是石化廠新聞用語校正員。依規範修正不精準或不宜對外的措辭（如 瓦斯→液化石油氣、漏氣→氣體外洩、避免「爆炸」等聳動詞、原因未明不得認責），輸出修正後全文，並在最後用「— 修正說明 —」列出更動。',
+      termIn.value);
+    termOut.value=out; termStatus.textContent='完成';
+  }catch(e){termStatus.textContent='錯誤';alert(e.message);}
+}
+
+// ===== 案例庫（回填學習）＋ 相似案例調用 =====
+let CURRENT={f:null};
+function lib(){return JSON.parse(localStorage.getItem('caselib')||'[]');}
+function saveLib(a){localStorage.setItem('caselib',JSON.stringify(a));updateLib();}
+function updateLib(){libCount.textContent='案例庫：'+lib().length;}
+function caseTags(f){return [...(f.loc||[]),...(f.mat||[]),...(f.cause||[]),...(f.status||[])];}
+function similarCases(f){
+  const t=new Set(caseTags(f));
+  return lib().map(c=>({c,score:(c.tags||[]).filter(x=>t.has(x)).length}))
+    .filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,3).map(x=>x.c);
+}
+function renderSims(sims){
+  const box=document.getElementById('simCases');
+  if(!sims.length){box.style.display='none';return;}
+  box.style.display='block';box.className='sim';
+  box.innerHTML='📚 <b>已自動調用 '+sims.length+' 筆相似歷史案例</b>（系統學習成果）：'
+    + sims.map(s=>`<span class="c">〔${s.id}〕${(s.tags||[]).slice(0,4).join('、')}</span>`).join('');
+}
+function learnFromDraft(){
+  if(!draft.value.trim()){alert('尚無草稿可學習');return;}
+  const f=CURRENT.f||collect();
+  const c={id:'PR-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+Math.floor(Math.random()*900+100),
+    ts:Date.now(), tags:caseTags(f), casualty:f.casualty, reported:f.reported,
+    facts:factsBlock(f).slice(0,500), draft:draft.value};
+  const a=lib(); a.unshift(c); saveLib(a);
+  setStatus('已學習為案例 '+c.id+'，下次相似事件將自動調用');
+  alert('✅ 已採用並學習為案例 '+c.id+'\n案例庫共 '+a.length+' 筆。換一個相似事件再生成，即可看到它被自動調用。');
+}
+function exportLib(){const b=new Blob([JSON.stringify(lib(),null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='caselib.json';a.click();}
+function importLib(inp){const fr=new FileReader();fr.onload=()=>{try{const a=JSON.parse(fr.result);if(Array.isArray(a)){saveLib(a);alert('已匯入 '+a.length+' 筆案例。');}}catch{alert('檔案格式錯誤');}};fr.readAsText(inp.files[0]);}
+
+// ===== 校正稽核（Opus，自我修正）=====
+async function audit(){
+  if(!draft.value.trim()){alert('尚無草稿可稽核');return;}
+  const box=document.getElementById('auditBox'); box.style.display='block'; box.className='auditpanel'; box.textContent='稽核中…';
+  const sys=CONSTITUTION+'\n\n'+(RUBRIC&&!RUBRIC.includes('__RUBRIC__')?RUBRIC:'依憲法逐條稽核，輸出：通過/退回、違反條目、修正後定稿、待確認清單。');
+  const user=`【待審草稿】\n${draft.value}`;
+  try{
+    const out=await callLLM(sys,user);
+    box.className='auditpanel'+(/退回/.test(out.slice(0,60))?' fail':'');
+    box.textContent=out;
+    setStatus('校正完成');
+  }catch(e){box.textContent='錯誤：'+e.message;}
+}
+
+// ===== 複製 / 分享 / 工具 =====
+async function copyEl(id){const t=document.getElementById(id).value.trim();if(!t){alert('沒有內容');return;}try{await navigator.clipboard.writeText(t);}catch{document.getElementById(id).select();document.execCommand('copy');}}
+function copyDraft(){copyEl('draft');setStatus('已複製到剪貼簿');}
+function shareLine(){const t=draft.value.trim();if(!t){alert('沒有內容可分享');return;}window.open('https://line.me/R/share?text='+encodeURIComponent(t),'_blank');}
+function setStatus(s,spin){status.textContent=s;}
+function updateCount(){charCount.textContent=draft.value.length+' 字';}
+function clearAll(){document.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);document.querySelectorAll('.other').forEach(o=>{o.value='';o.style.display='none';});source.value='';freeNote.value='';casualty.value='';reported.value='';draft.value='';piiWarn.style.display='none';simCases.style.display='none';auditBox.style.display='none';setNow();updateCount();setStatus('已清除');}
+function setNow(){const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());evtTime.value=d.toISOString().slice(0,16);}
+
+buildChecks(); loadSettings(); setNow(); updateLib(); draft.addEventListener('input',updateCount);
+</script>
+</body>
+</html>

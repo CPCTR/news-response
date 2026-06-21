@@ -1,0 +1,53 @@
+name: Generate press-release draft
+
+# 觸發：開一個帶 draft-request 標籤的 Issue（用 issue 表單）
+# 行為：依事件事實生成三版本初稿 → 開 PR；並在 Issue 留言回報
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  models: read
+
+jobs:
+  draft:
+    if: contains(join(github.event.issue.labels.*.name, ','), 'draft-request')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 生成初稿
+        id: gen
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_MODEL: openai/gpt-4o
+          EVENT_TEXT: ${{ github.event.issue.body }}
+        run: python scripts/generate_draft.py
+
+      - name: 開 PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: auto/draft-${{ github.event.issue.number }}
+          title: "🤖 新聞稿初稿 — Issue #${{ github.event.issue.number }}"
+          commit-message: "feat(draft): 自動生成初稿 for #${{ github.event.issue.number }}"
+          body: |
+            針對 Issue #${{ github.event.issue.number }} 自動生成的新聞稿初稿（草稿，待人工核准）。
+            檔案：`${{ steps.gen.outputs.draft_path }}`
+            請審核：事實是否有來源、有無 [待確認]、語氣是否合憲、有無個資。
+          add-paths: drafts/**
+
+      - name: 回報 Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: "✅ 初稿已生成並開 PR，請到 Pull requests 分頁審核。"
+            })

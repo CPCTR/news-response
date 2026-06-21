@@ -1,0 +1,16 @@
+name: 新聞稿初稿請求
+description: 填入事件事實，自動生成新聞稿初稿並開 PR
+title: "[草稿] "
+labels: ["draft-request"]
+body:
+  - type: textarea
+    id: event
+    attributes:
+      label: 事件事實 / 速報內容
+      description: 貼上工安速報或描述事實（時間、地點、設備、處置、是否有媒體關切）。請勿填個資。
+      placeholder: "例：2025/03/12 15:45 轉化處理工場，員工作業時遭鹼液噴濺，已送醫，丙級事故，無媒體關切。"
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: "送出後，Action 會生成三版本初稿並開一個 PR，請到 PR 審核修改。"
