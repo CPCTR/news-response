@@ -10,9 +10,15 @@
 ## 下一個具體動作 ⭐（明天）
 1. ✅（已完成）填現任官員姓名進 `officials.json`（74f97d9）。剩 1 筆副執行長 + 民代為 ○○○，需要時再補。
 2. **#2 表單一致性檢查**：勾不相容組合（如 涉及物質=廢水 ＋ 處置=攔油索/回收油料）時，生成前提醒。
-3. **上線部署**：`wrangler deploy` + `wrangler secret put GITHUB_TOKEN`（正式環境，勿用本機 .dev.vars）；
-   Worker 加 `x-app-key` + 鎖 `ALLOWED_ORIGIN` 防白嫖（PLAN Phase 2）。
+3. **上線部署**（防護已做完 e40ed93，待 Joseph 確認後執行）：
+   a. `cd worker && wrangler login`（互動，Joseph 自己跑）。
+   b. 設正式網域：改 `wrangler.toml` 的 `ALLOWED_ORIGIN` 為正式頁面網域。
+   c. `wrangler deploy`；`wrangler secret put GITHUB_TOKEN`、`wrangler secret put APP_KEY`（選用 ANTHROPIC_API_KEY 當 fallback，避免免費額度 429）。
+   d. 前端「⚙ API 設定」填正式 Worker URL + 同一把 App Key。
+   e. 頁面 `docs/index.html` 放**內網**（PLAN 決策，勿用公開 GitHub Pages）。
 4. 術語修正分頁接 `glossary.json`（PLAN Phase 3）。
+
+> 注意：GitHub Models 免費版有速率限制（今日測試已撞 429）。正式環境建議設 ANTHROPIC_API_KEY 當 fallback。
 
 ## 本機開發環境（重啟後要重跑）
 - 靜態站（no-cache）：`python3 <scratchpad>/nocache_server.py` 服務 docs/ 於 8788（或 `python3 -m http.server 8788 -d docs`）。
