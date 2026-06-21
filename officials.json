@@ -1,21 +1,21 @@
 {
-  "_note": "公開職務首長/民代名單（公開資料）。name 先以 ○○○ 待填；area 可填分工/選區以區分複數同職稱（如副總經理數位、副執行長安環）；verified=最後確認日，過期(>180天)會在具名前提醒。維護後跑 build_html.py 重建 docs。",
+  "_note": "公開職務首長/民代名單（公開資料）。name 以 ○○○ 待填；area 可填分工/選區以區分複數同職稱；verified=最後確認日，過期(>180天)會在具名前提醒。維護後跑 build_html.py 重建 docs。",
   "updated": "2026-06-21",
   "roles": [
-    {"title": "經濟部長", "name": "○○○", "verified": "2026-06-21", "default": false},
-    {"title": "台灣中油董事長", "name": "○○○", "verified": "2026-06-21", "default": false},
-    {"title": "台灣中油總經理", "name": "○○○", "verified": "2026-06-21", "default": false},
-    {"title": "台灣中油副總經理", "area": "", "name": "○○○", "verified": "2026-06-21", "default": false},
-    {"title": "台灣中油副總經理", "area": "", "name": "○○○", "verified": "2026-06-21", "default": false},
-    {"title": "台灣中油發言人", "name": "○○○", "verified": "2026-06-21", "default": false},
-    {"title": "煉製事業部執行長", "name": "○○○", "verified": "2026-06-21", "default": false},
-    {"title": "煉製事業部副執行長", "area": "", "name": "○○○", "verified": "2026-06-21", "default": false},
-    {"title": "煉製事業部副執行長", "area": "", "name": "○○○", "verified": "2026-06-21", "default": false},
-    {"title": "桃園煉油廠廠長", "name": "○○○", "verified": "2026-06-21", "default": true},
-    {"title": "桃園煉油廠發言人", "name": "○○○", "verified": "2026-06-21", "default": true}
+    {"title": "經濟部長", "name": "龔明鑫", "verified": "2026-06-21", "default": false},
+    {"title": "台灣中油董事長", "name": "方振仁", "verified": "2026-06-21", "default": false},
+    {"title": "台灣中油總經理", "name": "張敏", "verified": "2026-06-21", "default": false},
+    {"title": "台灣中油副總經理", "name": "許晋榮", "verified": "2026-06-21", "default": false},
+    {"title": "台灣中油副總經理", "name": "林珂如", "verified": "2026-06-21", "default": false},
+    {"title": "台灣中油發言人", "name": "林珂如", "verified": "2026-06-21", "default": false},
+    {"title": "煉製事業部執行長", "name": "季存厚", "verified": "2026-06-21", "default": false},
+    {"title": "煉製事業部副執行長", "name": "鄭昇源", "verified": "2026-06-21", "default": false},
+    {"title": "煉製事業部副執行長", "name": "○○○", "verified": "2026-06-21", "default": false},
+    {"title": "桃園煉油廠廠長", "name": "張正毅", "verified": "2026-06-21", "default": true},
+    {"title": "桃園煉油廠發言人", "name": "陳一龍", "verified": "2026-06-21", "default": true}
   ],
   "reps": [
-    {"title": "立法委員", "area": "桃園市", "name": "○○○", "verified": "2026-06-21", "default": false},
-    {"title": "桃園市議員", "area": "", "name": "○○○", "verified": "2026-06-21", "default": false}
+    {"title": "立法委員", "area": "桃園市", "name": "", "verified": "2026-06-21"},
+    {"title": "桃園市議員", "name": "○○○", "verified": "2026-06-21"}
   ]
 }
