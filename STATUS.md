@@ -4,10 +4,14 @@
 **最後更新：** 2026-06-22
 **整體狀態：** 🟢 已上線 Cloudflare：Pages https://news-response.pages.dev + Worker news-response-llm.589411.workers.dev
 
-## 上線資訊
-- 頁面（Pages）：https://news-response.pages.dev （任何機器零設定可用；待綁自訂網域 response.new-cpc.com）
-- Worker：https://news-response-llm.589411.workers.dev （已設 GITHUB_TOKEN secret；ALLOWED_ORIGIN 允許 pages.dev + response.new-cpc.com）
-- 待辦：① dashboard 綁 response.new-cpc.com 自訂網域；② demo 前設 ANTHROPIC_API_KEY fallback（免費版會 429）；③ demo 後開 APP_KEY。
+## 上線資訊（全部已驗證）
+- 頁面（Pages）：https://news-response.pages.dev （任何機器零設定可用）
+- 自訂網域：https://response.new-cpc.com （已綁，DNS/SSL 傳播中，稍後生效）
+- Worker：https://news-response-llm.589411.workers.dev
+  - secrets：GITHUB_TOKEN（主路，免費 gpt-5-chat）、ANTHROPIC_API_KEY（備援 claude-sonnet-4-6）
+  - 防護：ALLOWED_ORIGIN 允許 pages.dev + response.new-cpc.com（鎖來源）；APP_KEY 暫關（demo 後再開）
+  - ✅ 實證：主路 gpt-5-chat 出稿；GitHub 429 時自動 fallback 到 Anthropic Sonnet 出稿（不斷稿）
+- demo 後待辦：`wrangler secret put APP_KEY` + 頁面填同一把 App Key 開啟密鑰保護。
 
 ## 一句話現況
 桃園煉油廠「新聞說明稿快速編輯程式」：結構化表單勾關鍵字 → Worker 代理 LLM（gpt-5-chat 免費）生稿 → 具名確認 → 乾淨對外稿 + 內部審查註記 → 人工核稿 → 回填學習。本機 demo 跑通。
