@@ -8,8 +8,7 @@
 桃園煉油廠「新聞說明稿快速編輯程式」：結構化表單勾關鍵字 → Worker 代理 LLM（gpt-5-chat 免費）生稿 → 具名確認 → 乾淨對外稿 + 內部審查註記 → 人工核稿 → 回填學習。本機 demo 跑通。
 
 ## 下一個具體動作 ⭐（明天）
-1. **填現任官員姓名進 `officials.json`**（公開資料，目前全 ○○○ 佔位）→ commit。
-   - 頁面「🗂 長官名單」填 → 按「⬇ 匯出 officials.json」覆蓋檔案；或直接編輯檔。
+1. ✅（已完成）填現任官員姓名進 `officials.json`（74f97d9）。剩 1 筆副執行長 + 民代為 ○○○，需要時再補。
 2. **#2 表單一致性檢查**：勾不相容組合（如 涉及物質=廢水 ＋ 處置=攔油索/回收油料）時，生成前提醒。
 3. **上線部署**：`wrangler deploy` + `wrangler secret put GITHUB_TOKEN`（正式環境，勿用本機 .dev.vars）；
    Worker 加 `x-app-key` + 鎖 `ALLOWED_ORIGIN` 防白嫖（PLAN Phase 2）。
