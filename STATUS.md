@@ -4,13 +4,13 @@
 **最後更新：** 2026-06-22
 **整體狀態：** 🟢 已上線 Cloudflare：Pages https://news-response.pages.dev + Worker news-response-llm.589411.workers.dev
 
-## 存取鎖定進度（同網域 + Cloudflare Access）
-- ✅ Worker route `response.new-cpc.com/api/*` 已部署；頁面端點依網域自動選（custom domain 走同源 `/api`、其他走 workers.dev）。
-- ✅ Cloudflare Access 應用 `response`（destination response.new-cpc.com、policy 只允許 589411@gmail.com、One-time PIN 登入）已設定。
-- ✅ Anthropic key 已移除（成本止血）。
-- ⏳ 等 response.new-cpc.com 的 Edge SSL 簽發（Initializing）。
-- ⏳ 待辦：SSL 好 → 你瀏覽器登入測 `/api` 生成 → 確認後我把 `workers_dev=false` 關閉 workers.dev（徹底鎖死，只剩 Access 閘後的 /api）。
-- 註：GitHub 免費額度今日測試已限流，恢復後主路才會出稿；或 demo 前再加回 Anthropic fallback。
+## 存取鎖定（已完成）
+- ✅ **唯一入口**：`https://response.new-cpc.com`（頁面）+ 同源 `/api/generate`（Worker route），**workers.dev 已關閉**（404）。
+- ✅ **Cloudflare Access**（policy「Allow owners」= Cloudflare 帳號登入）守著整個 response.new-cpc.com（含 /api）；未登入 curl 一律 302 擋下。
+- ✅ 頁面依網域自動選端點：custom domain 走同源 `/api/generate`。
+- ✅ **備援鏈（3 層，皆驗證可出稿）**：OpenRouter `google/gemini-3-flash-preview`（主）→ GitHub `gpt-5-chat`（免費備援）→ Anthropic `claude-sonnet-4-6`。
+  - 主模型改用 Gemini 3 Flash Preview（品質較佳）；GitHub 免費降為備援。secrets：GITHUB_TOKEN / OPENROUTER_API_KEY / ANTHROPIC_API_KEY 皆在 Cloudflare。
+- 成本：主路 Gemini Flash（便宜）按量計；若要回到「免費 GitHub 優先」把 worker.js 的 chain 順序 github 排回第一即可。
 
 ## 上線資訊（全部已驗證）
 - 頁面（Pages）：https://news-response.pages.dev （任何機器零設定可用）
