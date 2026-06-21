@@ -4,7 +4,7 @@ compatibility_date = "2025-01-01"
 
 # 非機密設定可放這裡（機密請用 `wrangler secret put`）
 [vars]
-ALLOWED_ORIGIN = "https://news-response.launchdock.app"  # ← 改成你的 Pages 網域
+ALLOWED_ORIGIN = "https://response.new-cpc.com,https://news-response.pages.dev"  # 自訂網域 + pages.dev（逗號分隔多來源）
 GH_MODEL = "openai/gpt-5-chat"                            # GitHub Models（免費）；reasoning 版可改 gpt-5 / gpt-5-mini / o4-mini（worker 會自動切 max_completion_tokens）
 ANTHROPIC_MODEL = "claude-sonnet-4-6"                     # 備援模型
 

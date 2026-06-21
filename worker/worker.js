@@ -26,9 +26,13 @@ const ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages";
 
 export default {
   async fetch(request, env) {
-    const origin = env.ALLOWED_ORIGIN || "*";
+    // ALLOWED_ORIGIN 可逗號分隔多個來源（如 自訂網域 + pages.dev）；"*" 為全放行
+    const reqOrigin = request.headers.get("Origin") || "";
+    const allowList = (env.ALLOWED_ORIGIN || "*").split(",").map(s => s.trim()).filter(Boolean);
+    const allowAll = allowList.includes("*");
+    const corsOrigin = allowAll ? "*" : (allowList.includes(reqOrigin) ? reqOrigin : (allowList[0] || "*"));
     const cors = {
-      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Origin": corsOrigin,
       "Access-Control-Allow-Methods": "POST, OPTIONS",
       "Access-Control-Allow-Headers": "content-type, x-app-key",
       "Access-Control-Max-Age": "86400",
@@ -38,11 +42,9 @@ export default {
     if (request.method !== "POST")
       return json({ error: "POST only" }, 405, cors);
 
-    // 防白嫖①：鎖來源。瀏覽器跨站請求會帶 Origin；設了 ALLOWED_ORIGIN（非 *）就只放行該來源。
-    if (env.ALLOWED_ORIGIN && env.ALLOWED_ORIGIN !== "*") {
-      const o = request.headers.get("Origin");
-      if (o && o !== env.ALLOWED_ORIGIN) return json({ error: "forbidden_origin" }, 403, cors);
-    }
+    // 防白嫖①：鎖來源。瀏覽器跨站請求會帶 Origin；不在允許清單就擋（非瀏覽器無 Origin 則放行，靠 ②）。
+    if (!allowAll && reqOrigin && !allowList.includes(reqOrigin))
+      return json({ error: "forbidden_origin" }, 403, cors);
     // 防白嫖②：共享密鑰。設了 APP_KEY 就強制比對 x-app-key（curl 等非瀏覽器也擋）。
     // 正式環境務必 `wrangler secret put APP_KEY`；本機不設則開放，方便測試。
     if (env.APP_KEY && request.headers.get("x-app-key") !== env.APP_KEY)

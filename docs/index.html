@@ -804,16 +804,18 @@ function openSettings(){settings.style.display='flex';}
 function closeSettings(){settings.style.display='none';}
 function toggleBackend(){const w=backend.value==='worker';workerCfg.style.display=w?'block':'none';directCfg.style.display=w?'none':'block';}
 function saveSettings(){localStorage.setItem('cfg',JSON.stringify({backend:backend.value,worker:workerUrl.value,ak:appKeyHdr.value,k:apiKey.value,md:modelDraft.value}));closeSettings();}
-function loadSettings(){const c=JSON.parse(localStorage.getItem('cfg')||'{}');if(c.backend)backend.value=c.backend;if(c.worker)workerUrl.value=c.worker;if(c.ak)appKeyHdr.value=c.ak;if(c.k)apiKey.value=c.k;if(c.md)modelDraft.value=c.md;toggleBackend();}
+function loadSettings(){const c=JSON.parse(localStorage.getItem('cfg')||'{}');backend.value=c.backend||'worker';workerUrl.value=c.worker||DEFAULT_WORKER;if(c.ak)appKeyHdr.value=c.ak;if(c.k)apiKey.value=c.k;if(c.md)modelDraft.value=c.md;toggleBackend();}
 let RAG=true; function toggleRag(){RAG=!RAG;ragPill.classList.toggle('on',RAG);ragPill.textContent=RAG?'📚 RAG 啟用':'📚 RAG 關閉';}
 
+// 正式 Worker 預設端點（讓任何機器零設定可用；可在「⚙ API 設定」覆蓋）
+const DEFAULT_WORKER='https://news-response-llm.589411.workers.dev';
 // ===== LLM 呼叫（Worker 為主，直連為備援）=====
 async function callLLM(system,user){
   const cfg=JSON.parse(localStorage.getItem('cfg')||'{}');
   if((cfg.backend||'worker')==='worker'){
-    if(!cfg.worker){openSettings();throw new Error('請先設定 Worker Endpoint');}
+    const wurl=cfg.worker||DEFAULT_WORKER;
     const h={'content-type':'application/json'}; if(cfg.ak)h['x-app-key']=cfg.ak;
-    const r=await fetch(cfg.worker,{method:'POST',headers:h,body:JSON.stringify({system,user,max_tokens:2800})});
+    const r=await fetch(wurl,{method:'POST',headers:h,body:JSON.stringify({system,user,max_tokens:2800})});
     const j=await r.json(); if(!r.ok||j.error)throw new Error('Worker: '+(j.error||r.status)+(j.detail?' / '+j.detail:'')); return j.text;
   }
   if(!cfg.k){openSettings();throw new Error('請先設定 API Key');}
