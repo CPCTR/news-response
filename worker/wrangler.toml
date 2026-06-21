@@ -11,3 +11,5 @@ ANTHROPIC_MODEL = "claude-sonnet-4-6"                     # 備援模型
 # 機密（不要寫在這裡，用指令設定）：
 #   wrangler secret put GITHUB_TOKEN        # GitHub PAT，需 models:read
 #   wrangler secret put ANTHROPIC_API_KEY   # 備援，可省略
+#   wrangler secret put APP_KEY             # 防白嫖共享密鑰；正式環境務必設，前端「App Key」需填同值
+# 上線前並把上方 ALLOWED_ORIGIN 改成正式頁面網域（鎖來源）。

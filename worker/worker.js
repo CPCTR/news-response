@@ -30,13 +30,23 @@ export default {
     const cors = {
       "Access-Control-Allow-Origin": origin,
       "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "content-type",
+      "Access-Control-Allow-Headers": "content-type, x-app-key",
       "Access-Control-Max-Age": "86400",
     };
 
     if (request.method === "OPTIONS") return new Response(null, { headers: cors });
     if (request.method !== "POST")
       return json({ error: "POST only" }, 405, cors);
+
+    // 防白嫖①：鎖來源。瀏覽器跨站請求會帶 Origin；設了 ALLOWED_ORIGIN（非 *）就只放行該來源。
+    if (env.ALLOWED_ORIGIN && env.ALLOWED_ORIGIN !== "*") {
+      const o = request.headers.get("Origin");
+      if (o && o !== env.ALLOWED_ORIGIN) return json({ error: "forbidden_origin" }, 403, cors);
+    }
+    // 防白嫖②：共享密鑰。設了 APP_KEY 就強制比對 x-app-key（curl 等非瀏覽器也擋）。
+    // 正式環境務必 `wrangler secret put APP_KEY`；本機不設則開放，方便測試。
+    if (env.APP_KEY && request.headers.get("x-app-key") !== env.APP_KEY)
+      return json({ error: "unauthorized" }, 401, cors);
 
     let body;
     try {
