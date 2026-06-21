@@ -25,11 +25,21 @@
 桃園煉油廠「新聞說明稿快速編輯程式」：結構化表單勾關鍵字 → Worker 代理 LLM（gpt-5-chat 免費）生稿 → 具名確認 → 乾淨對外稿 + 內部審查註記 → 人工核稿 → 回填學習。本機 demo 跑通。
 
 ## 下一個具體動作 ⭐（換機器接手看這裡 + docs/devlog/2026-06-22.md）
-1. **收尾存取鎖定**（進行中，卡在 SSL）：
-   a. 等 `response.new-cpc.com` SSL 簽發 → 瀏覽器開它 → Cloudflare Access email PIN 登入 → 測「生成新聞初稿」。
-   b. `/api` 能出稿後 → 編輯 `worker/wrangler.toml` 把 `workers_dev = true` 改 **`false`** → `cd worker && wrangler deploy`（關閉 workers.dev 後門，徹底鎖死）。
-   c. **新機器前置**：先 `wrangler login`（OAuth 每台要重登，帳號 589411@gmail.com）。詳見 devlog「新機器接手須知」。
+> 上線 + 存取鎖定 + 3 層備援 + Gemini 主模型 + 草稿/審查分離 皆已完成並 push。Demo 可用。
+1. **決定主模型策略**：目前主路 = Gemini 3 Flash Preview（付費、品質佳）；GitHub `gpt-5-chat`（免費）降為備援。
+   若要回「免費優先」→ `worker/wrangler.toml` 無關，改 `worker/worker.js` 的 chain 順序把 `github` 排回第一 → `wrangler deploy`。
 2. **#2 表單一致性檢查**：勾不相容組合（如 涉及物質=廢水 ＋ 處置=攔油索/回收油料）時，生成前提醒。
+3. **glossary.json**（PLAN Phase 3）：術語修正分頁串接。
+4. （如需給評審等非 Cloudflare 帳號的人用）把 Access policy 從「Allow owners」改成 email 白名單或 Google。
+
+## 新機器接手 SOP
+```
+git pull
+cd worker && wrangler login        # Cloudflare 帳號 589411@gmail.com（OAuth 每台要重登）
+```
+- 線上服務（Pages + Worker + 3 secrets）都在 Cloudflare，換機器不受影響。
+- 本機 `wrangler dev` 才需重建 `worker/.dev.vars`（gitignored；GITHUB_TOKEN + ALLOWED_ORIGIN=localhost:8788）。
+- 改 worker → `cd worker && wrangler deploy`；改頁面 → `python3 scripts/build_html.py && wrangler pages deploy docs --project-name=news-response --branch=main --commit-dirty=true`。
 3. **上線部署**（防護已做完 e40ed93，待 Joseph 確認後執行）：
    a. `cd worker && wrangler login`（互動，Joseph 自己跑）。
    b. 設正式網域：改 `wrangler.toml` 的 `ALLOWED_ORIGIN` 為正式頁面網域。
