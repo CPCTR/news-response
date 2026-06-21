@@ -809,7 +809,7 @@ let RAG=true; function toggleRag(){RAG=!RAG;ragPill.classList.toggle('on',RAG);r
 
 // 正式 Worker 預設端點：在 response.new-cpc.com 走同源 /api（受 Cloudflare Access 保護）；
 // 其他來源（如 pages.dev）走 workers.dev。可在「⚙ API 設定」覆蓋。
-const DEFAULT_WORKER = (location.hostname==='response.new-cpc.com') ? '/api'
+const DEFAULT_WORKER = (location.hostname==='response.new-cpc.com') ? '/api/generate'
   : 'https://news-response-llm.589411.workers.dev';
 // ===== LLM 呼叫（Worker 為主，直連為備援）=====
 async function callLLM(system,user){
