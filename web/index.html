@@ -470,8 +470,10 @@ function saveSettings(){localStorage.setItem('cfg',JSON.stringify({backend:backe
 function loadSettings(){const c=JSON.parse(localStorage.getItem('cfg')||'{}');backend.value=c.backend||'worker';workerUrl.value=c.worker||DEFAULT_WORKER;if(c.ak)appKeyHdr.value=c.ak;if(c.k)apiKey.value=c.k;if(c.md)modelDraft.value=c.md;toggleBackend();}
 let RAG=true; function toggleRag(){RAG=!RAG;ragPill.classList.toggle('on',RAG);ragPill.textContent=RAG?'📚 RAG 啟用':'📚 RAG 關閉';}
 
-// 正式 Worker 預設端點（讓任何機器零設定可用；可在「⚙ API 設定」覆蓋）
-const DEFAULT_WORKER='https://news-response-llm.589411.workers.dev';
+// 正式 Worker 預設端點：在 response.new-cpc.com 走同源 /api（受 Cloudflare Access 保護）；
+// 其他來源（如 pages.dev）走 workers.dev。可在「⚙ API 設定」覆蓋。
+const DEFAULT_WORKER = (location.hostname==='response.new-cpc.com') ? '/api'
+  : 'https://news-response-llm.589411.workers.dev';
 // ===== LLM 呼叫（Worker 為主，直連為備援）=====
 async function callLLM(system,user){
   const cfg=JSON.parse(localStorage.getItem('cfg')||'{}');
