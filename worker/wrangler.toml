@@ -2,6 +2,13 @@ name = "news-response-llm"
 main = "worker.js"
 compatibility_date = "2025-01-01"
 
+# 同網域 API route：讓頁面以同源 /api 呼叫，一道 Cloudflare Access 即可同時保護頁面與 API
+routes = [
+  { pattern = "response.new-cpc.com/api/*", zone_name = "new-cpc.com" }
+]
+# 過渡期暫留 workers.dev（頁面切到 /api、SSL 就緒後改 false 正式關閉）
+workers_dev = true
+
 # 非機密設定可放這裡（機密請用 `wrangler secret put`）
 [vars]
 ALLOWED_ORIGIN = "https://response.new-cpc.com,https://news-response.pages.dev"  # 自訂網域 + pages.dev（逗號分隔多來源）
