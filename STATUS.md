@@ -1,8 +1,13 @@
 # STATUS — news-response
 
 > 單一真相。每次離開前更新（全域憲法收尾鐵律）。
-**最後更新：** 2026-06-21
-**整體狀態：** 🟢 已 push 到 private repo（github.com/589411/news-response），核心功能可用、可上線
+**最後更新：** 2026-06-22
+**整體狀態：** 🟢 已上線 Cloudflare：Pages https://news-response.pages.dev + Worker news-response-llm.589411.workers.dev
+
+## 上線資訊
+- 頁面（Pages）：https://news-response.pages.dev （任何機器零設定可用；待綁自訂網域 response.new-cpc.com）
+- Worker：https://news-response-llm.589411.workers.dev （已設 GITHUB_TOKEN secret；ALLOWED_ORIGIN 允許 pages.dev + response.new-cpc.com）
+- 待辦：① dashboard 綁 response.new-cpc.com 自訂網域；② demo 前設 ANTHROPIC_API_KEY fallback（免費版會 429）；③ demo 後開 APP_KEY。
 
 ## 一句話現況
 桃園煉油廠「新聞說明稿快速編輯程式」：結構化表單勾關鍵字 → Worker 代理 LLM（gpt-5-chat 免費）生稿 → 具名確認 → 乾淨對外稿 + 內部審查註記 → 人工核稿 → 回填學習。本機 demo 跑通。
