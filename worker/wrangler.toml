@@ -13,10 +13,12 @@ workers_dev = true
 [vars]
 ALLOWED_ORIGIN = "https://response.new-cpc.com,https://news-response.pages.dev"  # 自訂網域 + pages.dev（逗號分隔多來源）
 GH_MODEL = "openai/gpt-5-chat"                            # GitHub Models（免費）；reasoning 版可改 gpt-5 / gpt-5-mini / o4-mini（worker 會自動切 max_completion_tokens）
-ANTHROPIC_MODEL = "claude-sonnet-4-6"                     # 備援模型
+OPENROUTER_MODEL = "openai/gpt-4o-mini"                   # OpenRouter 備援模型 id（可到 openrouter.ai 換）
+ANTHROPIC_MODEL = "claude-sonnet-4-6"                     # Anthropic 備援模型
 
 # 機密（不要寫在這裡，用指令設定）：
-#   wrangler secret put GITHUB_TOKEN        # GitHub PAT，需 models:read
-#   wrangler secret put ANTHROPIC_API_KEY   # 備援，可省略
+#   wrangler secret put GITHUB_TOKEN        # GitHub PAT，需 models:read（主路）
+#   wrangler secret put OPENROUTER_API_KEY  # OpenRouter 備援，可省略
+#   wrangler secret put ANTHROPIC_API_KEY   # Anthropic 備援，可省略
 #   wrangler secret put APP_KEY             # 防白嫖共享密鑰；正式環境務必設，前端「App Key」需填同值
 # 上線前並把上方 ALLOWED_ORIGIN 改成正式頁面網域（鎖來源）。

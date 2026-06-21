@@ -4,24 +4,28 @@
  * 為什麼需要它：GitHub Pages 是純靜態，無法安全保管金鑰。
  * 這支 Worker 是「持鑰的代理」：前端只打這個 endpoint，金鑰留在 Worker。
  *
- * 路由策略（符合你的選擇：GitHub Models 免費為主，Cloudflare 為載體）：
- *   1) 預設打 GitHub Models（免費額度）
- *   2) 遇到 429 / 403 / 5xx（多半是每日額度用盡）→ 自動 fallback 到 Anthropic
+ * 路由策略：供應商鏈，依序嘗試，前一個失敗（429/403/5xx）就換下一個：
+ *   1) GitHub Models（免費額度，主路）
+ *   2) OpenRouter（備援）
+ *   3) Anthropic（備援）
  *
  * 前端送來的 body： { system, user, max_tokens?, force? }
- *   force: "github" | "anthropic"  // 可選，強制指定供應商，方便除錯
+ *   force: "github" | "openrouter" | "anthropic"  // 可選，強制只用單一供應商，方便除錯
  * 回傳： { text, provider, model }
  *
- * 需要的環境變數（用 `wrangler secret put` 設定，不要寫在程式碼）：
+ * 需要的環境變數（金鑰用 `wrangler secret put`，不要寫在程式碼）：
  *   GITHUB_TOKEN        — GitHub PAT，需 models:read 權限（主路）
+ *   OPENROUTER_API_KEY  — OpenRouter 金鑰（備援，可省略）
  *   ANTHROPIC_API_KEY   — Anthropic 金鑰（備援，可省略）
  * 一般變數（可寫在 wrangler.toml [vars]）：
- *   ALLOWED_ORIGIN      — 你的 Pages 網域，例如 https://news-response.launchdock.app
- *   GH_MODEL            — GitHub Models 模型 id，例如 openai/gpt-4o
- *   ANTHROPIC_MODEL     — 備援模型，例如 claude-sonnet-4-6
+ *   ALLOWED_ORIGIN      — 你的頁面網域（可逗號分隔多個）
+ *   GH_MODEL            — GitHub Models 模型 id，例如 openai/gpt-5-chat
+ *   OPENROUTER_MODEL    — OpenRouter 模型 id，例如 openai/gpt-4o-mini
+ *   ANTHROPIC_MODEL     — Anthropic 模型 id，例如 claude-sonnet-4-6
  */
 
 const GH_ENDPOINT = "https://models.github.ai/inference/chat/completions";
+const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 const ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages";
 
 export default {
@@ -62,34 +66,27 @@ export default {
     const maxTokens = Math.min(Number(body.max_tokens) || 2500, 4000);
     if (!user) return json({ error: "missing user prompt" }, 400, cors);
 
-    const force = body.force; // optional
-    const tryGithub = force !== "anthropic" && !!env.GITHUB_TOKEN;
-    const tryAnthropic = force !== "github" && !!env.ANTHROPIC_API_KEY;
+    const force = body.force; // 可選："github" | "openrouter" | "anthropic"
+    // 供應商鏈：依序嘗試，前一個失敗就換下一個；force 指定則只跑那一個
+    const chain = [
+      { name: "github",     enabled: !!env.GITHUB_TOKEN,       fn: callGithub },
+      { name: "openrouter", enabled: !!env.OPENROUTER_API_KEY, fn: callOpenRouter },
+      { name: "anthropic",  enabled: !!env.ANTHROPIC_API_KEY,  fn: callAnthropic },
+    ].filter((p) => p.enabled && (!force || force === p.name));
 
-    // 1) 主路：GitHub Models
-    if (tryGithub) {
+    if (!chain.length) return json({ error: "no_backend_configured" }, 500, cors);
+
+    let lastDetail = "";
+    for (const p of chain) {
       try {
-        const r = await callGithub(env, system, user, maxTokens);
+        const r = await p.fn(env, system, user, maxTokens);
         if (r.ok) return json(r.payload, 200, cors);
-        // 額度 / 暫時性錯誤 → 嘗試 fallback
-        if (!tryAnthropic) return json({ error: "github_models_failed", detail: r.detail }, 502, cors);
+        lastDetail = `${p.name}: ${r.detail}`;
       } catch (e) {
-        if (!tryAnthropic) return json({ error: "github_models_error", detail: String(e) }, 502, cors);
+        lastDetail = `${p.name}: ${String(e)}`;
       }
     }
-
-    // 2) 備援：Anthropic
-    if (tryAnthropic) {
-      try {
-        const r = await callAnthropic(env, system, user, maxTokens);
-        if (r.ok) return json(r.payload, 200, cors);
-        return json({ error: "anthropic_failed", detail: r.detail }, 502, cors);
-      } catch (e) {
-        return json({ error: "anthropic_error", detail: String(e) }, 502, cors);
-      }
-    }
-
-    return json({ error: "no_backend_configured" }, 500, cors);
+    return json({ error: "all_backends_failed", detail: lastDetail }, 502, cors);
   },
 };
 
@@ -117,6 +114,32 @@ async function callGithub(env, system, user, maxTokens) {
   const j = await res.json();
   const text = j.choices?.[0]?.message?.content || "";
   return { ok: true, payload: { text, provider: "github_models", model } };
+}
+
+async function callOpenRouter(env, system, user, maxTokens) {
+  const model = env.OPENROUTER_MODEL || "openai/gpt-4o-mini";
+  const res = await fetch(OPENROUTER_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
+      "X-Title": "news-response",
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: maxTokens,
+      messages: [
+        ...(system ? [{ role: "system", content: system }] : []),
+        { role: "user", content: user },
+      ],
+    }),
+  });
+  if (!res.ok) {
+    return { ok: false, detail: `OR ${res.status}: ${(await res.text()).slice(0, 300)}` };
+  }
+  const j = await res.json();
+  const text = j.choices?.[0]?.message?.content || "";
+  return { ok: true, payload: { text, provider: "openrouter", model } };
 }
 
 async function callAnthropic(env, system, user, maxTokens) {
