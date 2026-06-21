@@ -42,6 +42,8 @@
   .sim b{color:var(--cpc)} .sim .c{display:block;padding:2px 0;border-top:1px dashed #cfe2ff;margin-top:4px}
   .auditpanel{background:#f7fbf8;border:1px solid #bfe3c9;border-radius:8px;padding:10px 12px;margin-top:8px;white-space:pre-wrap;font-size:13px}
   .auditpanel.fail{background:#fff5f5;border-color:#f0b9b9}
+  .reviewnotes{background:#fbfbfd;border:1px dashed #c7cdd9;border-radius:8px;padding:10px 12px;margin-top:8px;white-space:pre-wrap;font-size:12.5px;color:#5f6571}
+  .reviewnotes .rh{display:block;font-weight:700;color:#9a3412;margin-bottom:4px;font-size:12px}
   .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:6px}
   .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:50}
   .modal .box{background:#fff;border-radius:12px;padding:20px;max-width:520px;width:92%}
@@ -154,10 +156,11 @@
         <span class="pill on" id="ragPill" onclick="toggleRag()">📚 RAG 啟用</span>
         <button class="ok sm" onclick="copyDraft()">📋 複製</button>
         <button class="ghost sm" onclick="shareLine()">💬 LINE</button>
-        <button class="ghost sm" onclick="document.getElementById('draft').value=''">✕ 清除</button>
+        <button class="ghost sm" onclick="draft.value='';document.getElementById('reviewNotes').style.display='none';updateCount()">✕ 清除</button>
       </div>
       <div id="simCases" style="display:none"></div>
       <textarea id="draft" class="draftbox" placeholder="填寫左側欄位後，點擊「生成新聞初稿」即可在此顯示可編輯的草稿。&#10;&#10;生成後可直接在此修改內容，完成後點擊「複製」或「生成新聞稿（正式版）」。"></textarea>
+      <div id="reviewNotes" class="reviewnotes" style="display:none"></div>
       <div class="status"><span class="dot"></span><span id="status">準備就緒</span><span id="charCount" style="float:right"></span></div>
       <div id="auditBox" style="display:none"></div>
       <div class="row">
@@ -901,7 +904,10 @@ async function generate(mode){
   setStatus('生成中…',true);
   try{
     const out=await callLLM(system,user);
-    draft.value=out; updateCount();
+    const i=out.indexOf(REVIEW_MARK);
+    if(i>=0){ draft.value=out.slice(0,i).replace(/[\s*\-—_=]+$/,'').trim(); showReviewNotes(out.slice(i)); }
+    else { draft.value=out.trim(); showReviewNotes(''); }
+    updateCount();
     setStatus((mode==='formal'?'正式版':mode==='rewrite'?'已套用修改':'初稿')+'生成完成');
   }catch(e){setStatus('錯誤');alert(e.message);}
 }
@@ -967,12 +973,21 @@ async function copyEl(id){const t=document.getElementById(id).value.trim();if(!t
 // 對外本文：截掉「內部審查註記」之後的內容
 const REVIEW_MARK='【內部審查註記';
 function publicDraft(){const v=draft.value||'';const i=v.indexOf(REVIEW_MARK);let b=(i>=0?v.slice(0,i):v);return b.replace(/[\s*\-—_=]+$/,'').trim();}
+// 內部審查註記 → 下方獨立唯讀面板（不混進草稿、不會被複製）
+function showReviewNotes(notes){
+  const box=document.getElementById('reviewNotes');
+  const t=(notes||'').replace(/^[\s*\-—_=]+/,'').replace(/^【內部審查註記[^】]*】/,'').trim();
+  if(!t){box.style.display='none';box.textContent='';return;}
+  box.style.display='block';
+  box.innerHTML='<span class="rh">🔒 內部審查註記（請勿對外，不會被複製）</span>';
+  box.appendChild(document.createTextNode(t));
+}
 async function copyText(t){if(!t){alert('沒有內容');return;}try{await navigator.clipboard.writeText(t);}catch{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();}}
 function copyDraft(){copyText(publicDraft());setStatus('已複製對外本文（不含審查註記）');}
 function shareLine(){const t=publicDraft();if(!t){alert('沒有內容可分享');return;}window.open('https://line.me/R/share?text='+encodeURIComponent(t),'_blank');}
 function setStatus(s,spin){status.textContent=s;}
 function updateCount(){charCount.textContent=draft.value.length+' 字';}
-function clearAll(){document.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);document.querySelectorAll('.other').forEach(o=>{o.value='';o.style.display='none';});source.value='';freeNote.value='';casualty.value='';reported.value='';draft.value='';piiWarn.style.display='none';simCases.style.display='none';auditBox.style.display='none';setNow();updateCount();setStatus('已清除');}
+function clearAll(){document.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);document.querySelectorAll('.other').forEach(o=>{o.value='';o.style.display='none';});source.value='';freeNote.value='';casualty.value='';reported.value='';draft.value='';piiWarn.style.display='none';simCases.style.display='none';auditBox.style.display='none';document.getElementById('reviewNotes').style.display='none';setNow();updateCount();setStatus('已清除');}
 function setNow(){const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());evtTime.value=d.toISOString().slice(0,16);}
 
 buildChecks(); loadSettings(); setNow(); updateLib(); draft.addEventListener('input',updateCount);
