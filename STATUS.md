@@ -9,10 +9,29 @@
 本機已跑起靜態站（8788）與 wrangler dev（8787）。**卡在 `reference_md_deidentified/` 6 檔殘留人名待決定怎麼清，未 push。**
 
 ## 下一個具體動作 ⭐
-1. **你 review**：`git diff reference_md_deidentified`（人名→職稱、單位保留；38 檔內文+3 檔改名）。
-2. review OK → 我 commit 去識別化變更，並 **squash 全部 3 個 commit 成 1 個乾淨 commit**
-   （因人名也在 init `b82f413`，squash 後歷史不留名字）→ 才能 push 到 private repo。
-3. 設 `worker/.dev.vars`（GITHUB_TOKEN）+ 本機把 wrangler.toml 的 ALLOWED_ORIGIN 暫改 localhost，即可實測生成。
+1. **你在瀏覽器實測長官具名功能**（http://localhost:8788 → 填表 → 生成 → 跳「具名確認」，預設對就 Enter）。
+   先到「🗂 長官名單」把 ○○○ 換成真實現任姓名（公開資料）。
+2. 實測 OK → commit 此功能（officials.json + UI + 治理文件兩類分流）。
+3. 語音輸入校正（Web Speech API + Haiku 術語/錯字/職稱校正，接 Phase 3 glossary.json）。
+4. push 到 private repo（歷史已乾淨，等 Joseph 指示）。
+
+## 未提交改動（2026-06-21，待一起 commit）
+- 長官/民代具名 + 具名確認面板（officials.json）；語音輸入 + 預校正詞庫（corrections.json）。
+- 治理：CONSTITUTION 條目六 / CLAUDE.md 改兩類分流。
+- **Worker 模型升級**：GH_MODEL gpt-4o→**gpt-5-chat**（免費、品質大升）；worker.js 自動依模型挑
+  `max_tokens` / `max_completion_tokens`（支援 gpt-5/o3/o4 推理版）。
+- **出稿格式修正**：本文乾淨無 (來源:)/[待確認]，溯源與待確認改列「【內部審查註記（請勿對外）】」；
+  複製/LINE/學習只取對外本文（publicDraft）。已實測 gpt-5-chat 出稿符合。
+- 本機：worker/.dev.vars（gitignored）放 GITHUB_TOKEN + ALLOWED_ORIGIN=localhost:8788 解 CORS。
+- ⏳ 待辦：#2 表單一致性檢查（廢水↔油料處置不相容提醒）；官方姓名填入 officials.json。
+
+## 已完成
+- ✅ 去識別化收尾：單一乾淨 commit、全歷史零殘留人名（2026-06-21）。
+- ✅ 長官/民代具名功能（2026-06-21，未 commit）：
+  - `officials.json`（公開資料、build 內嵌）+「🗂 長官名單」編輯器（含最後確認日）。
+  - 生成前「具名確認」面板：預設姓名正確直接 Enter；逾 180 天未確認標⚠；`○○○` 佔位不具名。
+  - 確認的姓名注入 prompt「具名規則」；憲法條目六/CLAUDE 改為兩類分流。
+  - 驗證：build OK、JS 語法 OK、純邏輯單元測試全過、頁面 200。
 
 ## 去識別化結果（2026-06-21 完成）
 - 方針：人名（含公眾人物，因會退休/調職）一律降為**級職**，保留級職與**權責單位**。

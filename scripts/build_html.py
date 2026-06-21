@@ -18,6 +18,22 @@ if not pattern.search(src):
     raise SystemExit('找不到 <script id="kb">，請確認 web/index.html 結構。')
 out = pattern.sub(lambda m: m.group(1) + kb + m.group(3), src)
 
+# 內嵌長官/民代名單（公開資料）
+off_path = ROOT / "officials.json"
+if off_path.exists():
+    off = off_path.read_text(encoding="utf-8")
+    json.loads(off)  # 驗證為合法 JSON
+    opat = re.compile(r'(<script[^>]*id="officials"[^>]*>)(.*?)(</script>)', re.S)
+    out = opat.sub(lambda m: m.group(1) + off + m.group(3), out)
+
+# 內嵌語音/輸入預校正對照表
+corr_path = ROOT / "corrections.json"
+if corr_path.exists():
+    corr = corr_path.read_text(encoding="utf-8")
+    json.loads(corr)  # 驗證為合法 JSON
+    cpat = re.compile(r'(<script[^>]*id="corrections"[^>]*>)(.*?)(</script>)', re.S)
+    out = cpat.sub(lambda m: m.group(1) + corr + m.group(3), out)
+
 # 注入稽核 rubric（Opus 撰寫，Sonnet 執行）
 rubric_path = ROOT / "prompts" / "audit_rubric.md"
 if rubric_path.exists():

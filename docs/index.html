@@ -128,13 +128,20 @@
       <h2>📝 補充說明</h2>
       <div data-group="stmt"></div>
       <label style="margin-top:8px">自由補充說明</label>
-      <textarea id="freeNote" rows="3" placeholder="例：指揮官為廠長○○○、初步研判為硫化鐵自燃、外洩量…（請勿填寫個資）"></textarea>
+      <textarea id="freeNote" rows="3" placeholder="例：指揮官為廠長○○○、初步研判為硫化鐵自燃、外洩量…（員工/民眾個資請勿填寫）"></textarea>
+      <div class="row" style="margin-top:6px">
+        <button class="ghost sm" onclick="voiceInput(this)">🎤 語音輸入</button>
+        <button class="ghost sm" onclick="precorrectBtn()">✎ 預校正</button>
+        <button class="ghost sm" onclick="openCorr()">📒 校正詞庫</button>
+      </div>
+      <div class="warnbox" id="corrNote" style="background:#eef7ff;border-color:#cfe2ff;color:#0b3d91"></div>
       <div class="warnbox" id="piiWarn"></div>
     </div>
 
     <button class="block" onclick="generate('draft')">⚡ 生成新聞初稿</button>
     <div class="row" style="margin-top:8px">
       <button class="ghost sm" onclick="clearAll()">🗑 清除全部欄位</button>
+      <button class="ghost sm" onclick="openOfficials()">🗂 長官名單</button>
       <button class="ghost sm" onclick="openSettings()">⚙ API 設定</button>
     </div>
   </div>
@@ -201,6 +208,53 @@
   <div class="row" style="justify-content:flex-end;margin-top:14px">
     <button class="ghost" onclick="closeSettings()">取消</button>
     <button onclick="saveSettings()">儲存</button>
+  </div>
+</div></div>
+
+<!-- 具名確認 modal（生成前）：預設正確直接 Enter -->
+<div class="modal" id="confirmModal"><div class="box" onkeydown="if(event.key==='Enter'&&event.target.tagName!=='TEXTAREA'){event.preventDefault();confirmOfficialsOk();}">
+  <h2 style="color:var(--cpc);margin-top:0">🧑‍💼 具名確認</h2>
+  <p class="muted" style="margin-top:0">勾選＝本次稿件會具名。<b>預設姓名都正確的話，直接按 Enter</b> 即可生成。錯誤的名字最麻煩，請務必確認。</p>
+  <div id="confirmBody" style="max-height:46vh;overflow:auto"></div>
+  <div class="row" style="justify-content:space-between;margin-top:14px">
+    <button class="ghost sm" onclick="closeConfirm();openOfficials();">✎ 編輯名單</button>
+    <div class="row">
+      <button class="ghost" onclick="confirmOfficialsCancel()">取消</button>
+      <button id="confirmOkBtn" onclick="confirmOfficialsOk()">✓ 確認並生成 (Enter)</button>
+    </div>
+  </div>
+</div></div>
+
+<!-- 長官/民代名單編輯 modal -->
+<div class="modal" id="officialsModal"><div class="box">
+  <h2 style="color:var(--cpc);margin-top:0">🗂 長官／民代名單</h2>
+  <p class="muted" style="margin-top:0">公開資料。改完按「儲存」，會把今天記為各筆「最後確認日」。超過 180 天未確認，生成時會標⚠提醒。</p>
+  <div id="officialsBody" style="max-height:50vh;overflow:auto"></div>
+  <div class="row" style="margin-top:8px">
+    <button class="ghost sm" onclick="addRow('roles')">＋ 新增職務（含複數副總/副執行長）</button>
+    <button class="ghost sm" onclick="addRow('reps')">＋ 新增民代</button>
+  </div>
+  <div class="row" style="justify-content:space-between;margin-top:14px">
+    <button class="ghost sm" onclick="exportOfficials()" title="下載後覆蓋專案根目錄 officials.json 即可入庫">⬇ 匯出 officials.json</button>
+    <div class="row">
+      <button class="ghost" onclick="closeOfficials()">取消</button>
+      <button onclick="saveOfficialsEdit()">儲存（記為今日已確認）</button>
+    </div>
+  </div>
+</div></div>
+
+<!-- 校正詞庫 modal -->
+<div class="modal" id="corrModal"><div class="box">
+  <h2 style="color:var(--cpc);margin-top:0">📒 語音／輸入校正詞庫</h2>
+  <p class="muted" style="margin-top:0">生成草稿前會自動把左欄（辨識錯誤/口語）替換成右欄（正確專有名詞）。例：練油→煉油、瓦斯→液化石油氣。</p>
+  <div id="corrBody" style="max-height:50vh;overflow:auto"></div>
+  <button class="ghost sm" style="margin-top:8px" onclick="addCorr()">＋ 新增對照</button>
+  <div class="row" style="justify-content:space-between;margin-top:14px">
+    <button class="ghost sm" onclick="exportCorr()" title="下載後覆蓋專案根目錄 corrections.json 即可入庫">⬇ 匯出 corrections.json</button>
+    <div class="row">
+      <button class="ghost" onclick="closeCorr()">取消</button>
+      <button onclick="saveCorr()">儲存</button>
+    </div>
   </div>
 </div></div>
 
@@ -461,6 +515,42 @@
   ]
 }
 </script>
+<script type="application/json" id="officials">{
+  "_note": "公開職務首長/民代名單（公開資料）。name 先以 ○○○ 待填；area 可填分工/選區以區分複數同職稱（如副總經理數位、副執行長安環）；verified=最後確認日，過期(>180天)會在具名前提醒。維護後跑 build_html.py 重建 docs。",
+  "updated": "2026-06-21",
+  "roles": [
+    {"title": "經濟部長", "name": "○○○", "verified": "2026-06-21", "default": false},
+    {"title": "台灣中油董事長", "name": "○○○", "verified": "2026-06-21", "default": false},
+    {"title": "台灣中油總經理", "name": "○○○", "verified": "2026-06-21", "default": false},
+    {"title": "台灣中油副總經理", "area": "", "name": "○○○", "verified": "2026-06-21", "default": false},
+    {"title": "台灣中油副總經理", "area": "", "name": "○○○", "verified": "2026-06-21", "default": false},
+    {"title": "台灣中油發言人", "name": "○○○", "verified": "2026-06-21", "default": false},
+    {"title": "煉製事業部執行長", "name": "○○○", "verified": "2026-06-21", "default": false},
+    {"title": "煉製事業部副執行長", "area": "", "name": "○○○", "verified": "2026-06-21", "default": false},
+    {"title": "煉製事業部副執行長", "area": "", "name": "○○○", "verified": "2026-06-21", "default": false},
+    {"title": "桃園煉油廠廠長", "name": "○○○", "verified": "2026-06-21", "default": true},
+    {"title": "桃園煉油廠發言人", "name": "○○○", "verified": "2026-06-21", "default": true}
+  ],
+  "reps": [
+    {"title": "立法委員", "area": "桃園市", "name": "○○○", "verified": "2026-06-21", "default": false},
+    {"title": "桃園市議員", "area": "", "name": "○○○", "verified": "2026-06-21", "default": false}
+  ]
+}
+</script>
+<script type="application/json" id="corrections">{
+  "_note": "語音/輸入預校正對照表。生成草稿前自動把 from 替換為 to，提高專有名詞與辨識正確率。可自行增修；非個資，可入庫。",
+  "updated": "2026-06-21",
+  "pairs": [
+    {"from": "練油", "to": "煉油"},
+    {"from": "液化石油器", "to": "液化石油氣"},
+    {"from": "瓦斯", "to": "液化石油氣"},
+    {"from": "漏氣", "to": "氣體外洩"},
+    {"from": "攔油鎖", "to": "攔油索"},
+    {"from": "中油公司桃園", "to": "台灣中油桃園"},
+    {"from": "硫化氥", "to": "硫化氫"}
+  ]
+}
+</script>
 <script type="text/markdown" id="rubric"># 新聞稿合規稽核 Rubric（由 Opus 撰寫，供 Sonnet 執行）
 
 你是台灣中油桃園煉油廠的新聞稿稽核員。職責是依《憲法》逐條守門，**只就合規性把關，不改寫風格偏好**。
@@ -525,12 +615,166 @@ const KB = (()=>{try{return JSON.parse(document.getElementById('kb').textContent
 const RUBRIC = document.getElementById('rubric').textContent;
 const PII = /(09\d{2}[-\s]?\d{3}[-\s]?\d{3})|(\(0\d\)\s?\d{6,8})|(0\d-\d{6,8})|(員編\s*[:：]?\s*\w+)/g;
 
+// ===== 長官／民代名單（公開職務，可具名）=====
+const OFFICIALS_SEED = (()=>{try{return JSON.parse(document.getElementById('officials').textContent)}catch{return{roles:[],reps:[]}}})();
+const STALE_DAYS = 180;
+function officials(){const o=JSON.parse(localStorage.getItem('officials')||'null');return (o&&o.roles)?o:JSON.parse(JSON.stringify(OFFICIALS_SEED));}
+function officialItems(){const o=officials();return [...(o.roles||[]).map(r=>({...r,_g:'roles'})),...(o.reps||[]).map(r=>({...r,_g:'reps'}))];}
+function offLabel(it){return (it.title||'')+(it.area?`（${it.area}）`:'');}
+function daysSince(d){if(!d)return 9999;const t=new Date(d);if(isNaN(t))return 9999;return Math.floor((Date.now()-t.getTime())/864e5);}
+function today(){const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10);}
+function hasName(n){return n&&n.trim()&&!/^[○◯●]+$/.test(n.trim());}
+
+// 具名確認面板：回傳 [{title,name}]，取消回 null
+let _confirmState=null;
+function confirmOfficials(){
+  return new Promise(resolve=>{
+    const items=officialItems();
+    document.getElementById('confirmBody').innerHTML = items.map((it,i)=>{
+      const stale=daysSince(it.verified)>STALE_DAYS;
+      return `<label class="chk" style="justify-content:space-between;gap:6px">
+        <span style="flex:1"><input type="checkbox" data-ci="${i}" ${it.default&&hasName(it.name)?'checked':''}> ${offLabel(it)}</span>
+        <input data-ni="${i}" value="${(it.name||'').replace(/"/g,'&quot;')}" placeholder="○○○" style="width:130px;padding:4px 6px">
+        ${stale?`<span class="danger" title="最後確認：${it.verified||'從未'}">⚠</span>`:'<span style="width:14px"></span>'}
+      </label>`;
+    }).join('') + `<p class="muted" style="margin-top:6px">⚠＝逾 ${STALE_DAYS} 天未確認，請先到「編輯名單」確認是否仍在任。</p>`;
+    _confirmState={items,resolve};
+    document.getElementById('confirmModal').style.display='flex';
+    setTimeout(()=>document.getElementById('confirmOkBtn').focus(),30);
+  });
+}
+function confirmOfficialsOk(){
+  if(!_confirmState)return; const {items,resolve}=_confirmState; const chosen=[];
+  document.querySelectorAll('#confirmBody input[type=checkbox]').forEach(cb=>{
+    if(cb.checked){const i=+cb.dataset.ci; const name=document.querySelector(`#confirmBody input[data-ni="${i}"]`).value.trim();
+      if(hasName(name))chosen.push({title:offLabel(items[i]),name});}
+  });
+  closeConfirm(); resolve(chosen);
+}
+function confirmOfficialsCancel(){if(!_confirmState)return;const r=_confirmState.resolve;closeConfirm();r(null);}
+function closeConfirm(){document.getElementById('confirmModal').style.display='none';_confirmState=null;}
+
+// 名單編輯
+function openOfficials(){renderOfficials();document.getElementById('officialsModal').style.display='flex';}
+function closeOfficials(){document.getElementById('officialsModal').style.display='none';}
+function renderOfficials(){
+  const o=officials();
+  const esc=s=>(s||'').replace(/"/g,'&quot;');
+  const row=(r,g)=>`<div class="row" data-g="${g}" style="gap:6px;margin:4px 0">
+    <input value="${esc(r.title)}" data-f="title" style="flex:1" placeholder="職稱">
+    <input value="${esc(r.area)}" data-f="area" style="width:90px" placeholder="${g==='reps'?'選區':'分工(選填)'}">
+    <input value="${esc(r.name)}" data-f="name" style="width:110px" placeholder="○○○">
+    <span class="muted" style="font-size:11px;width:64px">${r.verified||'未確認'}</span>
+    <button class="ghost sm" title="刪除此列" onclick="this.parentNode.remove()" style="padding:4px 8px">✕</button>
+  </div>`;
+  document.getElementById('officialsBody').innerHTML =
+    '<label style="margin-top:0">本廠／上級職務（同職稱可多筆，分工欄區分）</label>'+(o.roles||[]).map(r=>row(r,'roles')).join('')
+    +'<label>立委／市議員</label>'+(o.reps||[]).map(r=>row(r,'reps')).join('');
+}
+function addRow(g){
+  const wrap=document.createElement('div'); wrap.className='row'; wrap.dataset.g=g; wrap.style.cssText='gap:6px;margin:4px 0';
+  wrap.innerHTML=`<input data-f="title" style="flex:1" placeholder="職稱"${g==='reps'?' value="立法委員"':''}>
+    <input data-f="area" style="width:90px" placeholder="${g==='reps'?'選區':'分工(選填)'}">
+    <input data-f="name" style="width:110px" placeholder="○○○">
+    <span class="muted" style="font-size:11px;width:64px">未確認</span>
+    <button class="ghost sm" title="刪除此列" onclick="this.parentNode.remove()" style="padding:4px 8px">✕</button>`;
+  document.getElementById('officialsBody').appendChild(wrap);
+}
+function saveOfficialsEdit(){
+  const o={roles:[],reps:[]};
+  document.querySelectorAll('#officialsBody .row').forEach(div=>{
+    const g=div.dataset.g, e={};
+    div.querySelectorAll('input[data-f]').forEach(inp=>e[inp.dataset.f]=inp.value.trim());
+    if(!e.title)return;            // 空職稱不存
+    if(!e.area)delete e.area;
+    e.verified=today();
+    if(g==='roles'){const seed=(OFFICIALS_SEED.roles||[]).find(s=>s.title===e.title);e.default=seed?seed.default:false;o.roles.push(e);}
+    else{o.reps.push(e);}
+  });
+  localStorage.setItem('officials',JSON.stringify(o));
+  closeOfficials(); setStatus('長官名單已更新（記為今日已確認）');
+}
+function exportOfficials(){const b=new Blob([JSON.stringify(officials(),null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='officials.json';a.click();}
+
+// ===== 語音輸入 + 預校正（生成前把錯字/口誤依對照表修正）=====
+const CORR_SEED = (()=>{try{return JSON.parse(document.getElementById('corrections').textContent)}catch{return{pairs:[]}}})();
+function corrections(){const c=JSON.parse(localStorage.getItem('corrections')||'null');return (c&&c.pairs)?c:JSON.parse(JSON.stringify(CORR_SEED));}
+function applyCorrections(text){
+  let t=text||''; const changes=[];
+  (corrections().pairs||[]).forEach(p=>{
+    if(!p.from||p.to===undefined)return;
+    const n=t.split(p.from).length-1;
+    if(n>0){t=t.split(p.from).join(p.to);changes.push({from:p.from,to:p.to,n});}
+  });
+  return {text:t,changes};
+}
+// 對 freeNote 與所有「其它」自填欄做預校正，回傳變更清單
+function precorrect(){
+  const changes=[];
+  const fix=el=>{if(!el)return;const r=applyCorrections(el.value);if(r.changes.length){el.value=r.text;changes.push(...r.changes);}};
+  fix(freeNote);
+  document.querySelectorAll('.other').forEach(fix);
+  return changes;
+}
+function showCorrNote(changes){
+  const box=document.getElementById('corrNote');
+  if(!changes.length){box.style.display='none';return;}
+  const map={}; changes.forEach(c=>map[c.from+'→'+c.to]=(map[c.from+'→'+c.to]||0)+c.n);
+  box.style.display='block';
+  box.innerHTML='✎ 已預校正 '+changes.reduce((s,c)=>s+c.n,0)+' 處：'+Object.keys(map).join('、');
+}
+function precorrectBtn(){const c=precorrect();showCorrNote(c);setStatus(c.length?'已預校正 '+c.length+' 類詞':'無需校正');}
+
+// 語音輸入（Web Speech API，zh-TW）
+let _rec=null;
+function voiceInput(btn){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){alert('此瀏覽器不支援語音輸入，建議用 Chrome。');return;}
+  if(_rec){_rec.stop();return;}
+  _rec=new SR(); _rec.lang='zh-TW'; _rec.continuous=true; _rec.interimResults=false;
+  _rec.onresult=e=>{let s='';for(let i=e.resultIndex;i<e.results.length;i++)s+=e.results[i][0].transcript;
+    freeNote.value=(freeNote.value?freeNote.value+'':'')+s;
+    const r=applyCorrections(freeNote.value); freeNote.value=r.text; showCorrNote(r.changes);};
+  _rec.onerror=ev=>setStatus('語音錯誤：'+ev.error);
+  _rec.onend=()=>{btn.textContent='🎤 語音輸入'; _rec=null;};
+  _rec.start(); btn.textContent='⏹ 停止語音';
+}
+
+// 校正詞庫編輯
+function openCorr(){renderCorr();document.getElementById('corrModal').style.display='flex';}
+function closeCorr(){document.getElementById('corrModal').style.display='none';}
+function renderCorr(){
+  const esc=s=>(s||'').replace(/"/g,'&quot;');
+  document.getElementById('corrBody').innerHTML=(corrections().pairs||[]).map(p=>
+    `<div class="row" style="gap:6px;margin:4px 0">
+      <input value="${esc(p.from)}" data-f="from" style="flex:1" placeholder="辨識錯誤/口語詞">
+      <span class="muted">→</span>
+      <input value="${esc(p.to)}" data-f="to" style="flex:1" placeholder="正確專有名詞">
+      <button class="ghost sm" title="刪除" onclick="this.parentNode.remove()" style="padding:4px 8px">✕</button>
+    </div>`).join('');
+}
+function addCorr(){const w=document.createElement('div');w.className='row';w.style.cssText='gap:6px;margin:4px 0';
+  w.innerHTML=`<input data-f="from" style="flex:1" placeholder="辨識錯誤/口語詞"><span class="muted">→</span><input data-f="to" style="flex:1" placeholder="正確專有名詞"><button class="ghost sm" onclick="this.parentNode.remove()" style="padding:4px 8px">✕</button>`;
+  document.getElementById('corrBody').appendChild(w);}
+function saveCorr(){
+  const pairs=[];
+  document.querySelectorAll('#corrBody .row').forEach(div=>{
+    const e={}; div.querySelectorAll('input[data-f]').forEach(i=>e[i.dataset.f]=i.value.trim());
+    if(e.from)pairs.push({from:e.from,to:e.to||''});
+  });
+  localStorage.setItem('corrections',JSON.stringify({pairs}));
+  closeCorr(); setStatus('校正詞庫已更新（'+pairs.length+' 筆）');
+}
+function exportCorr(){const b=new Blob([JSON.stringify({pairs:corrections().pairs},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='corrections.json';a.click();}
+
 const CONSTITUTION = `你必須嚴守以下憲法（凌駕一切）：
 1.事實可溯源：具體數字/設備/時間只能來自使用者輸入；無來源者標[待確認]，禁止虛構。
 2.危機初期不認責、不臆測原因、不承諾賠償，用「調查中/釐清原因/配合主管機關」。
 3.敏感數據（傷亡/污染）以官方公告為準，不搶在主管機關前發布。
 4.法規與主管機關名稱須正確（環保局、勞檢處/職安署、消防局等），不確定標[待法遵確認]。
-5.語氣嚴肅負責、以社區與員工安全為先；個資（手機/員編/姓名）一律不得寫入對外稿，人名僅以職稱表示。
+5.語氣嚴肅負責、以社區與員工安全為先。人名分兩類：
+  (a)現任公開職務首長/民代（部長、董事長、廠長、發言人、立委、市議員）——若【具名規則】有提供姓名，可具名，且務必使用所給的正確姓名與職稱，不得自行臆測或張冠李戴；未提供則以職稱表示。
+  (b)員工、民眾、傷亡者及其他個人——一律去名，以職稱或○○○表示；手機/員編/個人聯絡方式一律不得寫入對外稿。
 6.只產草稿，須經人工核准。`;
 
 // ===== 建立勾選框 =====
@@ -606,6 +850,8 @@ function ragContext(){
 }
 
 async function generate(mode){
+  // 生成前：語音/輸入預校正（依對照表修正專有名詞與辨識錯誤）
+  if(mode!=='rewrite'){ showCorrNote(precorrect()); }
   // PII 檢查
   const m=freeNote.value.match(PII);
   if(m){piiWarn.style.display='block';piiWarn.innerHTML='⚠ 偵測到疑似個資（'+[...new Set(m)].slice(0,3).join('、')+'…），對外稿不會寫入，請先移除或改以職稱表示。';}
@@ -622,6 +868,13 @@ async function generate(mode){
     if(!f.casualty||!f.reported){alert('高風險欄位（人員傷亡、是否通報）禁止缺漏');return;}
     CURRENT.f=f;
     const formal = mode==='formal';
+    // 具名確認：預設姓名正確直接 Enter；錯誤名字最傷觀感，先擋下
+    const named = await confirmOfficials();
+    if(named===null){setStatus('已取消生成');return;}
+    const nameRule = named.length
+      ? '\n\n【具名規則】下列為現任公開職務（公開資料），稿件提及該職稱時，首次以「職稱＋姓名」具名、其後用職稱即可；務必使用下列正確姓名與職稱，不得張冠李戴或自行臆測：\n'
+        + named.map(n=>`- ${n.title}：${n.name}`).join('\n')
+      : '\n\n【具名規則】本次未提供任何長官姓名，所有人名一律以職稱或○○○表示。';
     const sims=similarCases(f); renderSims(sims);
     let learned='';
     if(sims.length){
@@ -629,9 +882,14 @@ async function generate(mode){
         + sims.map(s=>`〔${s.id}〕${(s.tags||[]).join('、')}\n${(s.draft||'').slice(0,400)}`).join('\n---\n');
     }
     system=CONSTITUTION+`\n\n你是台灣中油桃園煉油廠的新聞稿撰稿助理。`+ragContext();
-    user=`【本次事件要素（使用者勾選/輸入）】\n${factsBlock(f)}${learned}\n\n【任務】`+(formal
-      ? '產出一篇「正式新聞稿」：含官方抬頭、三段式（背景說明→回應說明→改善與承諾）、頁尾發言人區塊（姓名以○○○代）。每個關鍵事實後標(來源:使用者輸入)，無來源標[待確認]，不得寫入個資。'
-      : '產出一篇「新聞初稿」：簡潔、強調事實與安全，三段為宜。每個關鍵事實後標(來源:使用者輸入)，無來源標[待確認]，不得寫入個資。');
+    const fmtRule = '\n\n【輸出格式（務必遵守）】\n'
+      + '(1) 先輸出「新聞稿本文」：必須乾淨可直接對外，**不得出現任何 (來源:…)、[待確認] 等標記或括號註解**。\n'
+      + '(2) 事實只能依據上方要素；缺漏或未證實的原因/數據，改用保守措辭（如「確切原因仍在調查中」「實際影響待主管機關公布」），不得虛構，也不要在本文標註。\n'
+      + '(3) 本文之後務必另起一段，以「【內部審查註記（請勿對外）】」為標題，條列：① 事實來源（本稿哪些內容取自使用者輸入）；② 待確認（哪些原因/數據需主管機關核定或補充）。此區僅供內部審查。\n'
+      + '(4) 員工/民眾個資一律不得寫入。';
+    user=`【本次事件要素（使用者勾選/輸入）】\n${factsBlock(f)}${nameRule}${learned}\n\n【任務】`+(formal
+      ? '產出一篇「正式新聞稿」：含官方抬頭、三段式（背景說明→回應說明→改善與承諾）、頁尾發言人區塊（發言人若於具名規則提供姓名則具名，否則以○○○代）。'
+      : '產出一篇「新聞初稿」：簡潔、強調事實與安全，三段為宜。')+fmtRule;
   }
   setStatus('生成中…',true);
   try{
@@ -675,7 +933,7 @@ function learnFromDraft(){
   const f=CURRENT.f||collect();
   const c={id:'PR-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+Math.floor(Math.random()*900+100),
     ts:Date.now(), tags:caseTags(f), casualty:f.casualty, reported:f.reported,
-    facts:factsBlock(f).slice(0,500), draft:draft.value};
+    facts:factsBlock(f).slice(0,500), draft:publicDraft()};
   const a=lib(); a.unshift(c); saveLib(a);
   setStatus('已學習為案例 '+c.id+'，下次相似事件將自動調用');
   alert('✅ 已採用並學習為案例 '+c.id+'\n案例庫共 '+a.length+' 筆。換一個相似事件再生成，即可看到它被自動調用。');
@@ -699,8 +957,12 @@ async function audit(){
 
 // ===== 複製 / 分享 / 工具 =====
 async function copyEl(id){const t=document.getElementById(id).value.trim();if(!t){alert('沒有內容');return;}try{await navigator.clipboard.writeText(t);}catch{document.getElementById(id).select();document.execCommand('copy');}}
-function copyDraft(){copyEl('draft');setStatus('已複製到剪貼簿');}
-function shareLine(){const t=draft.value.trim();if(!t){alert('沒有內容可分享');return;}window.open('https://line.me/R/share?text='+encodeURIComponent(t),'_blank');}
+// 對外本文：截掉「內部審查註記」之後的內容
+const REVIEW_MARK='【內部審查註記';
+function publicDraft(){const v=draft.value||'';const i=v.indexOf(REVIEW_MARK);let b=(i>=0?v.slice(0,i):v);return b.replace(/[\s*\-—_=]+$/,'').trim();}
+async function copyText(t){if(!t){alert('沒有內容');return;}try{await navigator.clipboard.writeText(t);}catch{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();}}
+function copyDraft(){copyText(publicDraft());setStatus('已複製對外本文（不含審查註記）');}
+function shareLine(){const t=publicDraft();if(!t){alert('沒有內容可分享');return;}window.open('https://line.me/R/share?text='+encodeURIComponent(t),'_blank');}
 function setStatus(s,spin){status.textContent=s;}
 function updateCount(){charCount.textContent=draft.value.length+' 字';}
 function clearAll(){document.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);document.querySelectorAll('.other').forEach(o=>{o.value='';o.style.display='none';});source.value='';freeNote.value='';casualty.value='';reported.value='';draft.value='';piiWarn.style.display='none';simCases.style.display='none';auditBox.style.display='none';setNow();updateCount();setStatus('已清除');}

@@ -91,7 +91,8 @@ async function callGithub(env, system, user, maxTokens) {
     },
     body: JSON.stringify({
       model,
-      max_tokens: maxTokens,
+      // gpt-5 / o3 / o4 等推理模型只接受 max_completion_tokens；gpt-4*、gpt-5-chat 用 max_tokens
+      [/gpt-5|o3|o4/.test(model) && !/chat/.test(model) ? "max_completion_tokens" : "max_tokens"]: maxTokens,
       messages: [
         ...(system ? [{ role: "system", content: system }] : []),
         { role: "user", content: user },
