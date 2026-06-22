@@ -2,7 +2,21 @@
 
 > 單一真相。每次離開前更新（全域憲法收尾鐵律）。
 **最後更新：** 2026-06-22
-**整體狀態：** 🟢 已上線 Cloudflare：Pages https://news-response.pages.dev + Worker news-response-llm.589411.workers.dev
+**整體狀態：** 🟢 桃園已上線 Cloudflare + 🟢 多單位導入框架與 onboarding skill 已建並乾跨驗證
+
+## 多單位導入框架（2026-06-22 新增，核心進展）⭐
+目標：降低「把這套助理複製給桃園以外中油單位」的門檻 → 做成 skill＋單位包。
+- ✅ **共用框架 vs 單位專屬層**已拆乾淨。單位專屬層 = `units/<key>/{unit_profile,options,knowledge_base,officials,corrections}.json`。
+- ✅ **`web/index.html` 全面可注入**：OPTIONS、KB、officials、corrections、**unit_profile（頁面標題/抬頭/撰稿prompt）** 皆改為注入；無注入則 fallback 桃園（桃園零回歸，已驗證 app 完整 64 functions）。
+- ✅ **`build_html.py --unit <key>`**：讀 `units/<key>/` → 輸出 `docs/<key>/index.html`；無參數＝現行桃園行為。
+  - 修掉注入 bug：`inject()` 已限定 `count=1`，避免 HTML 註解內出現同名 id 字樣被誤吃掉 app 程式碼。
+- ✅ **onboarding skill `skills/news-response-onboard/`**：六階段（訪談採集→**網路新聞採集分析**→生成單位包→建RAG/題庫→建置驗證→打包收尾）。
+  - 含「從過去網路新聞分析打造題庫與資料庫」功能（`references/02_web_research.md`）。
+- ✅ **共用 rubric 去單位化**：`prompts/audit_rubric.md` 不再寫死桃園煉油廠/桃園環保局。
+- ✅ **乾跨驗證＝第三天然氣接收站**（`units/third_lng/`）：真的跑 WebSearch 採集觀塘/藻礁/海象/LNG儲槽/台達二號等實況 → 從零重生 event_types（生態環評/海事船舶/氣體外洩/不實訊息…與煉油廠完全不同）→ build 注入正確 → PII=0。首長姓名一律 ○○○ 不臆測。
+
+> 部署：每單位＝各自安裝包（整 repo + `units/<key>/` + `docs/<key>/`），可用自己的 Claude 訂閱/LLM API 跑 onboarding。
+> 待補（下一步）：title/org 執行時覆寫僅以 JS 邏輯模擬驗證、未實際瀏覽器 render；RAG 檢索層(Phase4 cases/)尚未接到新單位。
 
 ## 存取鎖定（已完成）
 - ✅ **唯一入口**：`https://response.new-cpc.com`（頁面）+ 同源 `/api/generate`（Worker route），**workers.dev 已關閉**（404）。
@@ -24,13 +38,12 @@
 ## 一句話現況
 桃園煉油廠「新聞說明稿快速編輯程式」：結構化表單勾關鍵字 → Worker 代理 LLM（gpt-5-chat 免費）生稿 → 具名確認 → 乾淨對外稿 + 內部審查註記 → 人工核稿 → 回填學習。本機 demo 跑通。
 
-## 下一個具體動作 ⭐（換機器接手看這裡 + docs/devlog/2026-06-22.md）
-> 上線 + 存取鎖定 + 3 層備援 + Gemini 主模型 + 草稿/審查分離 皆已完成並 push。Demo 可用。
-1. **決定主模型策略**：目前主路 = Gemini 3 Flash Preview（付費、品質佳）；GitHub `gpt-5-chat`（免費）降為備援。
-   若要回「免費優先」→ `worker/wrangler.toml` 無關，改 `worker/worker.js` 的 chain 順序把 `github` 排回第一 → `wrangler deploy`。
-2. **#2 表單一致性檢查**：勾不相容組合（如 涉及物質=廢水 ＋ 處置=攔油索/回收油料）時，生成前提醒。
-3. **glossary.json**（PLAN Phase 3）：術語修正分頁串接。
-4. （如需給評審等非 Cloudflare 帳號的人用）把 Access policy 從「Allow owners」改成 email 白名單或 Google。
+## 下一個具體動作 ⭐（換機器接手看這裡）
+> 多單位骨架 + onboarding skill + 第三接收站乾跨 皆完成並 push。
+1. **實際瀏覽器驗證 third_lng**：開 `docs/third_lng/index.html`，確認標題/抬頭執行時顯示「第三天然氣接收站」、勾選框長出 LNG 詞彙、跑一題生稿。
+3. **用 skill 正式導入第一個真實單位**：拿到該單位身分/設備/速報後跑 `skills/news-response-onboard` 六階段。
+4. **接 RAG 檢索層到新單位**（Phase4）：`extract_case_card.py` → `units/<key>/cases/`，生成時檢索。
+5. （原桃園待辦保留）#2 表單一致性檢查、glossary.json 術語分頁、主模型策略（Gemini 主／GitHub 免費備援切換在 `worker/worker.js` chain 順序）。
 
 ## 新機器接手 SOP
 ```

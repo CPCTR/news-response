@@ -1,0 +1,16 @@
+{
+  "_note": "（乾跨示範）第三天然氣接收站名單。company 級沿用根目錄並請單位確認現任；事業部執行長與單位主管/發言人未經確認，一律 ○○○，不臆測。",
+  "updated": "2026-06-22",
+  "roles": [
+    {"title": "經濟部長", "name": "龔明鑫", "verified": "2026-06-21", "default": false},
+    {"title": "台灣中油董事長", "name": "方振仁", "verified": "2026-06-21", "default": false},
+    {"title": "台灣中油總經理", "name": "張敏", "verified": "2026-06-21", "default": false},
+    {"title": "天然氣事業部執行長", "name": "○○○", "verified": "2026-06-22", "default": false},
+    {"title": "第三天然氣接收站站長", "name": "○○○", "verified": "2026-06-22", "default": true},
+    {"title": "第三天然氣接收站發言人", "name": "○○○", "verified": "2026-06-22", "default": true}
+  ],
+  "reps": [
+    {"title": "立法委員", "area": "桃園市（觀音／大園選區）", "name": "", "verified": "2026-06-22"},
+    {"title": "桃園市議員", "area": "觀音區", "name": "○○○", "verified": "2026-06-22"}
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "name": "TODO: 例 第三天然氣接收站新聞稿生成知識庫",
+    "version": "0.1",
+    "source": "TODO: 素材來源，例 網路公開新聞分析 + 單位提供速報（去識別化）",
+    "deidentified": true,
+    "note": "去識別化衍生物。生成時遵守 CONSTITUTION 條目六，個資不入對外稿。",
+    "usage": "供撰稿模型生成、稽核模型校正時載入。事件分類→爭點/回應基調/是否對外/few-shot。"
+  },
+
+  "official_templates": {
+    "press_release": {
+      "desc": "對外新聞稿/聲明稿官方版型（由 unit_profile.json 展開）",
+      "header_line1": "TODO: 同 unit_profile.header_line1",
+      "header_line2": "新 聞 資 料 NEWS LETTER",
+      "headline_principle": "標題直接把結論或回應基調寫進去（安撫性/澄清性）。",
+      "date_format": "民國年制（例：114年6月22日）",
+      "opening_patterns": ["有關媒體報導：…，說明如下：", "有民眾反應…，本站…", "有關近日…事件，…說明如下："],
+      "closing_patterns": ["TODO: 同 unit_profile.good_neighbor_closing", "民眾如有任何疑問，歡迎使用1912台灣中油免付費客服電話查詢。"],
+      "footer_template": "TODO: 台灣中油股份有限公司\\n<事業部><單位>\\n發言人：○○○ <職稱>    新聞聯絡人：○○○ <職稱>\\n聯絡電話：<電話>",
+      "footer_note": "發言人固定為 <層級>；新聞聯絡人會更換。個人手機不寫入對外稿。"
+    }
+  },
+
+  "global_response_principles": [
+    "事實可溯源：具體數字/設備/時間須來自速報或使用者輸入，無來源標[待確認]。",
+    "危機初期不認責、不臆測原因、不承諾賠償，用『調查中/釐清原因/配合主管機關』。",
+    "敏感數據(傷亡/污染)以官方公告為準，不搶在主管機關前發布。",
+    "用詞謹慎：未確認事項用『疑似/初步/調查中』。",
+    "語氣嚴肅負責、以社區與員工安全為先，結語常以『好鄰居/持續加強工安環保』收束。",
+    "個資(手機/員編/姓名)不得寫入對外稿；人名僅以姓氏+職稱呈現。",
+    "AI只產草稿，須經人工核准，不自動發布。"
+  ],
+
+  "publication_decision": {
+    "desc": "判斷是否要對外發新聞稿。",
+    "issue_external_if_any": [
+      "已有媒體/民代/地方意見領袖關切或報導",
+      "影響擴及廠/站外(社區、海域/河川、道路、供應、異味/噪音)",
+      "涉法律、勞資爭議或司法案件",
+      "有外部目擊或社群流傳(含不實訊息)",
+      "人員重大傷亡或環境重大事件"
+    ],
+    "internal_only_if_all": [
+      "事件等級低或預防性通報",
+      "媒體關切=無",
+      "無站外影響、限於站內製程",
+      "無重大人員傷亡"
+    ],
+    "proactive_non_crisis": ["公益/睦鄰/CSR", "首長視察", "演習澄清", "破除不實訊息"]
+  },
+
+  "event_types": [
+    {
+      "_todo": "從零依本單位實況重生 3~10 類。每類含 id/name/definition/typical_disputes/response_tone/public_default/severity_pattern/cases/few_shot_files。煉油廠類別僅供參考，勿照抄。網路新聞萃取的 case 標 source:web、verified:false。",
+      "id": "example_event",
+      "name": "TODO: 事件類型名稱",
+      "definition": "TODO: 定義",
+      "typical_disputes": ["TODO: 常見爭點"],
+      "response_tone": "TODO: 回應基調",
+      "public_default": "TODO: 通常對外或對內",
+      "severity_pattern": "TODO: 嚴重度型態",
+      "cases": [
+        {"date": "TODO", "title": "TODO", "summary": "TODO", "source": "web", "verified": false}
+      ],
+      "few_shot_files": []
+    }
+  ],
+
+  "few_shot_examples": [
+    {
+      "_todo": "1~3 篇高品質範例。優先用單位自有去識別化新聞稿；無則由網路新聞改寫情境並標 source:web。",
+      "event_type": "example_event",
+      "title": "TODO",
+      "date": "TODO 民國年制",
+      "body": "TODO",
+      "why_good": "TODO: 為何是好範例",
+      "source": "web"
+    }
+  ]
+}

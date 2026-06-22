@@ -1,0 +1,16 @@
+{
+  "_note": "公開職務首長/民代名單。name 須正確、不臆測，不確定填 ○○○。area 區分複數同職稱。verified=最後確認日，過期(>180天)具名前提醒。company 級首長可跨單位共用，單位級(站長/廠長/發言人)需各單位自填。",
+  "updated": "TODO: YYYY-MM-DD",
+  "roles": [
+    {"title": "經濟部長", "name": "TODO", "verified": "TODO", "default": false},
+    {"title": "台灣中油董事長", "name": "TODO", "verified": "TODO", "default": false},
+    {"title": "台灣中油總經理", "name": "TODO", "verified": "TODO", "default": false},
+    {"title": "TODO: 事業部執行長", "name": "TODO", "verified": "TODO", "default": false},
+    {"title": "TODO: 本單位主管(站長/廠長)", "name": "○○○", "verified": "TODO", "default": true},
+    {"title": "TODO: 本單位發言人", "name": "○○○", "verified": "TODO", "default": true}
+  ],
+  "reps": [
+    {"title": "立法委員", "area": "TODO: 選區", "name": "", "verified": "TODO"},
+    {"title": "TODO: 縣市議員", "name": "○○○", "verified": "TODO"}
+  ]
+}

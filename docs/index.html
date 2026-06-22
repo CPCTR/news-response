@@ -520,6 +520,8 @@
   ]
 }
 </script>
+<script type="application/json" id="options">{}</script>
+<script type="application/json" id="profile">{}</script>
 <script type="application/json" id="officials">{
   "_note": "公開職務首長/民代名單（公開資料）。name 以 ○○○ 待填；area 可填分工/選區以區分複數同職稱；verified=最後確認日，過期(>180天)會在具名前提醒。維護後跑 build_html.py 重建 docs。",
   "updated": "2026-06-21",
@@ -558,7 +560,7 @@
 </script>
 <script type="text/markdown" id="rubric"># 新聞稿合規稽核 Rubric（由 Opus 撰寫，供 Sonnet 執行）
 
-你是台灣中油桃園煉油廠的新聞稿稽核員。職責是依《憲法》逐條守門，**只就合規性把關，不改寫風格偏好**。
+你是台灣中油各單位的新聞稿稽核員（單位以知識庫官方版型為準）。職責是依《憲法》逐條守門，**只就合規性把關，不改寫風格偏好**。
 任一條 ❌ 即判「退回」。判斷時對照下列「正例 ✅／反例 ❌」，不要只看字面。
 
 ## 1. 責任分際（最高優先）
@@ -578,7 +580,7 @@
 - ✅「人員送醫狀況以院方與主管機關公告為準」
 
 ## 4. 法規與單位正確
-主管機關名稱正確（桃園市政府環保局、勞檢處/職業安全衛生署、消防局等）；不確定標 `[待法遵確認]`。
+主管機關名稱正確（當地縣市政府環保局、勞檢處/職業安全衛生署、消防局、海巡署等）；不確定標 `[待法遵確認]`。
 
 ## 5. 語氣
 嚴肅負責、社區與員工安全優先。
@@ -605,8 +607,10 @@
 ```
 </script>
 <script>
-// ===== 選項（AI 可直接在此 HTML 新增 keyword；下方陣列驅動勾選框）=====
-const OPTIONS = {
+// ===== 選項（勾選框由此陣列驅動）=====
+// 預設 = 桃園煉油廠（內建 fallback）。多單位：build_html.py --unit <key> 會把
+// units/&lt;key&gt;/options.json 會注入 id=options 的 JSON 區塊，下方優先採用注入值。
+const OPTIONS_SEED = {
   loc:   ["廠區","廠區廢水工場","廠區煉製工場區","沙崙外海","沙崙油庫","五股油庫","長途管線","廠區外"],
   mat:   ["航空燃油（Jet A-1）","永續航空燃油（SAF）","低硫燃料油（LSFO）","液化石油氣（LPG）","硫化氫（H2S）","重油","柴油","原油","廢水","廢氣"],
   cause: ["設備故障","天然災害","原因仍待查證中","管線洩漏","安全連鎖裝置作動"],
@@ -614,6 +618,18 @@ const OPTIONS = {
   handle:["管線已關閉","進行搶修中","現場已佈設攔油索及除油設備","配合環保局稽查人員處理中","消防車於現場灑水灌救中","回收油料中"],
   stmt:  ["對於造成民眾困擾，桃廠深感抱歉","桃廠將以最快的速度復原","全力搶修以穩定供油","桃廠肩負供應台中以北所需油料"],
 };
+const OPTIONS = (()=>{try{const o=JSON.parse(document.getElementById('options').textContent);return (o&&o.loc)?o:OPTIONS_SEED;}catch{return OPTIONS_SEED;}})();
+
+// ===== 單位身分（unit_profile.json 注入；無注入則為 null，沿用桃園預設殼層）=====
+const PROFILE = (()=>{try{const p=JSON.parse(document.getElementById('profile').textContent);return (p&&p.display_name)?p:null;}catch{return null;}})();
+const UNIT_NAME = (PROFILE&&PROFILE.display_name) ? PROFILE.display_name : '台灣中油桃園煉油廠';
+if(PROFILE){
+  document.title = (PROFILE.short_name||PROFILE.display_name) + ' 新聞說明稿快速編輯程式';
+  document.addEventListener('DOMContentLoaded',()=>{
+    const org=document.querySelector('header .org');
+    if(org) org.innerHTML = PROFILE.display_name.replace('股份有限公司','股份有限公司<br/>');
+  });
+}
 const HAS_OTHER = ["loc","mat","cause","status","handle"]; // 這些群組有「其它」自填
 
 const KB = (()=>{try{return JSON.parse(document.getElementById('kb').textContent)}catch{return{}}})();
@@ -891,7 +907,7 @@ async function generate(mode){
       learned='\n\n【相似歷史案例（本系統已學習，請參考其措辭與結構，勿照抄事實）】\n'
         + sims.map(s=>`〔${s.id}〕${(s.tags||[]).join('、')}\n${(s.draft||'').slice(0,400)}`).join('\n---\n');
     }
-    system=CONSTITUTION+`\n\n你是台灣中油桃園煉油廠的新聞稿撰稿助理。`+ragContext();
+    system=CONSTITUTION+`\n\n你是${UNIT_NAME}的新聞稿撰稿助理。`+ragContext();
     const fmtRule = '\n\n【輸出格式（務必遵守）】\n'
       + '(1) 先輸出「新聞稿本文」：必須乾淨可直接對外，**不得出現任何 (來源:…)、[待確認] 等標記或括號註解**。\n'
       + '(2) 事實只能依據上方要素；缺漏或未證實的原因/數據，改用保守措辭（如「確切原因仍在調查中」「實際影響待主管機關公布」），不得虛構，也不要在本文標註。\n'

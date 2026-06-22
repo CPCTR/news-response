@@ -1,0 +1,18 @@
+{
+  "_note": "（乾跨示範）第三天然氣接收站。身分事實來源；姓名/電話未經單位確認者標 TODO，不臆測。",
+  "unit_key": "third_lng",
+  "display_name": "台灣中油股份有限公司天然氣事業部第三天然氣接收站",
+  "short_name": "本站（三接）",
+  "parent_org": "台灣中油股份有限公司天然氣事業部",
+  "site_type": "天然氣接收站",
+  "header_line1": "台灣中油股份有限公司天然氣事業部",
+  "header_line2": "新 聞 資 料 NEWS LETTER",
+  "date_format": "民國年制（例：114年6月22日）",
+  "spokesperson_role": "TODO（待單位確認，例 副站長）",
+  "press_contact_role": "TODO（待單位確認，例 課長）",
+  "contact_phone": ["TODO（待單位提供對外聯絡電話）"],
+  "customer_service": "1912台灣中油免付費客服電話",
+  "mission_statement": "自國外進口液化天然氣，經儲存、氣化後穩定供應大潭發電廠及北臺灣用氣需求",
+  "good_neighbor_closing": "本站將持續加強工安、環保工作，施工兼顧海洋生態保育，與地方共存共榮，努力做個好鄰居。",
+  "region_context": "桃園市觀音區大潭觀塘工業港，鄰近大潭藻礁與海岸生態；環評、藻礁、海象與工程船舶議題高度敏感"
+}

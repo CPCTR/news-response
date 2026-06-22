@@ -1,0 +1,18 @@
+{
+  "_note": "單位身分的單一事實來源。訪談採集填寫；onboarding skill 據此展開 knowledge_base.official_templates 與 officials 頁尾。姓名/電話須正確，不確定留 TODO，勿臆測。",
+  "unit_key": "TODO: 英數小寫代號，例 third_lng",
+  "display_name": "TODO: 對外全名，例 台灣中油股份有限公司天然氣事業部第三天然氣接收站",
+  "short_name": "TODO: 簡稱，例 三接 / 本站",
+  "parent_org": "TODO: 上級事業部，例 台灣中油股份有限公司天然氣事業部",
+  "site_type": "TODO: 單位型態，例 天然氣接收站 / 油庫 / 加油站管理處 / 探採作業區",
+  "header_line1": "TODO: 新聞稿抬頭第一行，例 台灣中油股份有限公司天然氣事業部",
+  "header_line2": "新 聞 資 料 NEWS LETTER",
+  "date_format": "民國年制（例：114年6月22日）",
+  "spokesperson_role": "TODO: 發言人固定職稱層級，例 副站長 / 副廠長",
+  "press_contact_role": "TODO: 新聞聯絡人職稱，例 課長",
+  "contact_phone": ["TODO: 對外聯絡電話，例 03-XXXXXXX轉XXXX"],
+  "customer_service": "1912台灣中油免付費客服電話",
+  "mission_statement": "TODO: 單位角色定位一句話，例 穩定供應北部地區天然氣，並維護周邊海洋生態",
+  "good_neighbor_closing": "TODO: 慣用結語，例 本站將持續加強工安、環保工作，與地方共存共榮，努力做個好鄰居。",
+  "region_context": "TODO: 所在地與周邊敏感點，例 桃園觀塘工業港，鄰近大潭藻礁、海岸生態"
+}
