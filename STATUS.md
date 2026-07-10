@@ -19,7 +19,11 @@
 2. **CPCTR 開 Auth provider**。〔中油/Joseph 填 OAuth secret，我不碰憑證〕
    - ✅ **非機密 URL Configuration 已設**（2026-07-10，cic）：Site URL=`https://response.new-cpc.com`；Redirect URLs=`https://response.new-cpc.com/**`、`https://news-response.pages.dev/**`、`http://localhost:8788/**`。
    - **Google provider**：Callback URL（給 Google Cloud 註冊）=`https://bqgsgfnxdlmrhmeyxkfq.supabase.co/auth/v1/callback`。⚠ 面板現況異常：Client IDs 欄被填成字串「CPCTR's Project」（非法，要真的 `…apps.googleusercontent.com`），且已存了一組 Client Secret（非我設，來源不明）——**Joseph 需用真正的 Google OAuth client id/secret 覆蓋後再開 Enable toggle**。我未改未存。
-   - ⚠ **LINE**：**不在 Supabase 原生 provider 清單**（清單只有 Apple/Azure/…/Google/Kakao/Keycloak/LinkedIn…無 LINE）。前端 `signInWithOAuth({provider:'line'})` 無法直接靠原生 provider 成立。launchdock 當初怎麼接 LINE 需回查（memory 記「custom OIDC」＋92strings `oauth.ts`），這是獨立待辦，先擱置不影響 Google 路。
+   - **LINE**（2026-07-10 查證，複用 92strings `oauth.ts`）：接法 = Supabase **Custom OAuth/OIDC Provider**（Free plan 可建 3 個），**不用 Worker/Edge Function**。前端已就緒（`web/index.html` 已 `loginWith('custom:line')`→`signInWithOAuth({provider:'custom:line'})`，`news_drafts` 已 `auth.uid()` RLS）。唯一缺 = CPCTR Dashboard 設 Custom Provider。
+     - Dashboard（Auth → Custom Providers → New Provider）值：Identifier `line`、Auto-discovery(OIDC)、Issuer `https://access.line.me`、Scopes **只留 `openid, profile`**、Allow users without email **開**。〔以上我可填〕Client ID=LINE Login **Channel ID**、Client Secret=**Channel Secret**〔Joseph 貼，別給 AI，測通後 regenerate〕。
+     - 設完把 callback `https://bqgsgfnxdlmrhmeyxkfq.supabase.co/auth/v1/callback` 貼回 LINE Developers→LINE Login channel→Callback URL。
+     - 坑：①email scope 會炸（LINE email 要另申請，只留 openid/profile）②若日後加 profiles 表且 display_name NOT NULL→比照 92strings migration `20260704120000_handle_new_user_email_optional.sql` 改 trigger COALESCE（news_drafts 現況無此約束，暫踩不到）③別填錯專案（Custom provider 綁專案）。
+     - 前置：需一個 LINE Login channel（可考慮複用 new-cpc-worker 的 LIFF channel 2010579062 對應的 Login channel，或新建）。
 3. **Worker 重指新專案**：`SUPABASE_URL` + `SUPABASE_SERVICE_KEY` secret 換成 CPCTR。〔Joseph 互動〕
    - 2026-07-10 查證：這支 Worker = 已部署的 **`new-cpc-worker`**（不是 news-response-llm；後者純 LLM proxy 不碰 Supabase）。它用 `env.SUPABASE_URL` + `env.SUPABASE_SERVICE_KEY` 跑整套 pr-approval 簽核（cpc_cases/versions/case_steps/identities/bind_tokens/templates/positions）。
    - ⚠ **帳號**：`new-cpc-worker` **不在** wrangler 現登入的 jjaimark1 帳號（`secret list` 回 Worker not found），屬 **589411 那個 Cloudflare 帳號**。要改 secret 得先 `wrangler login` 切過去（互動，Joseph 跑）或走該帳號 dashboard。
