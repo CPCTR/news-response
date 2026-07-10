@@ -46,6 +46,7 @@
   .libitem .h .id{font-weight:700;color:var(--cpc)}
   .libitem .pv{font-size:12.5px;color:#33373f;margin:5px 0;max-height:3.4em;overflow:hidden;white-space:pre-wrap}
   #libCount{cursor:pointer}#libCount:hover{text-decoration:underline}
+  #syncEntry{cursor:pointer}#syncEntry:hover{text-decoration:underline}
   .auditpanel{background:#f7fbf8;border:1px solid #bfe3c9;border-radius:8px;padding:10px 12px;margin-top:8px;white-space:pre-wrap;font-size:13px}
   .auditpanel.fail{background:#fff5f5;border-color:#f0b9b9}
   .reviewnotes{background:#fbfbfd;border:1px dashed #c7cdd9;border-radius:8px;padding:10px 12px;margin-top:8px;white-space:pre-wrap;font-size:12.5px;color:#5f6571}
@@ -68,6 +69,7 @@
     <button class="tab" id="tabTerm" onclick="switchTab('term')">✍ 術語修正</button>
   </div>
   <span class="ver" id="libCount" onclick="openLib()" title="點擊查看已存草稿（稿件庫）">📚 案例庫：0</span>
+  <span class="ver" id="syncEntry" onclick="openLib()" title="草稿跨裝置同步（登入）">☁ 同步</span>
   <span class="ver" style="opacity:.6">V2.1</span>
 </header>
 
@@ -665,15 +667,17 @@ function authUser(){const u=SESSION&&SESSION.user;if(!u)return '';const m=u.user
 async function loginWith(provider){ if(!SUPA){alert('雲端同步尚未設定（需先填入 Supabase URL/anon key）');return;} try{ await SUPA.auth.signInWithOAuth({provider,options:{redirectTo:location.href.split('#')[0]}}); }catch(e){alert('登入失敗：'+e.message);} }
 async function logout(){ if(SUPA){ await SUPA.auth.signOut(); SESSION=null; renderAuth(); setStatus('已登出（草稿仍留本機）'); } }
 function renderAuth(){
-  const note=document.getElementById('libSyncNote'), bar=document.getElementById('authBar');
+  const note=document.getElementById('libSyncNote'), bar=document.getElementById('authBar'), sync=document.getElementById('syncEntry');
   if(!bar||!note) return;
-  if(!SUPA){ note.textContent='目前存在這台裝置（localStorage），換裝置看不到。雲端同步未設定。'; bar.innerHTML=''; return; }
+  if(!SUPA){ note.textContent='目前存在這台裝置（localStorage），換裝置看不到。雲端同步未設定。'; bar.innerHTML=''; if(sync){sync.textContent='☁ 同步';sync.title='草稿跨裝置同步';} return; }
   if(cloudOn()){
     note.textContent='已登入：'+authUser()+'　草稿已跨裝置同步（手機/電腦同一份）。';
     bar.innerHTML='<span class="muted">☁ '+esc(authUser())+'</span> <button class="ghost sm" onclick="syncPull()">↻ 立即同步</button> <button class="ghost sm" onclick="logout()">登出</button>';
+    if(sync){sync.textContent='☁ 已同步';sync.title='已登入：'+authUser()+'　點擊開啟稿件庫';}
   }else{
     note.textContent='登入後草稿可跨裝置同步（手機存的，電腦也看得到）。';
     bar.innerHTML='<button class="ok sm" onclick="loginWith(\'google\')">以 Google 登入</button> <button class="ghost sm" onclick="loginWith(\'custom:line\')">以 LINE 登入</button>';
+    if(sync){sync.textContent='☁ 登入同步';sync.title='點擊登入，草稿跨裝置同步';}
   }
 }
 function rowToCase(r){return {id:r.client_id, ts:r.ts||Date.parse(r.created_at)||0, tags:r.tags||[], casualty:r.casualty, reported:r.reported, facts:r.facts, draft:r.draft, versionOf:r.version_of||null};}

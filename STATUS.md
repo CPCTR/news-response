@@ -2,7 +2,7 @@
 
 > 單一真相。每次離開前更新（全域憲法收尾鐵律）。
 **最後更新：** 2026-07-10
-**整體狀態：** 🟢 桃園已上線 Cloudflare + 🟢 多單位導入框架 + 🟡 稿件庫跨裝置同步(前端已建/待接雲) + 🟡 後端搬遷至中油自有 Supabase(schema+資料已搬/待接線)
+**整體狀態：** 🟢 桃園已上線 Cloudflare + 🟢 多單位導入框架 + 🟢 稿件庫跨裝置同步(LINE 登入實測通) + 🟡 後端搬遷至中油自有 Supabase(DB+LINE 完成／Google+Worker 待接)
 
 ## 2026-07-10 稿件庫同步 + 後端搬遷中油自有 Supabase ⭐（進行中，換手看這裡）
 > 分支 `feat/draft-library`（未 push）。核心任務：①稿件庫可重開/再送LLM優化 ②草稿跨裝置同步。
@@ -23,8 +23,9 @@
      - ✅ **CPCTR Custom Provider 已建立並啟用**（2026-07-10，cic）：Identifier `line`（前端 `custom:line`）、OIDC Auto-discovery、Issuer `https://access.line.me`、Client ID=**2010578618**（複用舊 LINE Login channel）、Scopes `openid, profile`、Allow users without email ON。Client Secret 由 Joseph 手動貼。
      - ⚠ **修正**：Client ID 一度誤填 Messaging API 頻道 `2010578618`（那個沒 Callback URL、是 new-cpc-worker webhook bot）。正解 = **LINE Login 頻道 `2010579062`**（有 Callback URL、LIFF `2010579062-xDo4BzKa` 掛其下）。已改。
      - ✅ **線路驗證通過（2026-07-10 curl 實測）**：`/auth/v1/authorize?provider=custom:line` → 302 → `access.line.me` 且 client_id=2010579062、redirect_uri=callback、scope=openid profile、PKCE 全對；LINE 再 302 到 login/consent（無錯誤）→ 證明 client_id 有效 + callback 已註冊。
-     - ⏳ **僅剩最後一哩**：真人登入 LINE+授權 → Supabase 用 Channel Secret 換 token 發 session。此步驗證 Channel Secret（原 11 字元疑慮）；需真人帳密，我不代做。Joseph 開 localhost:8788 點「以 LINE 登入」完成即確認；若跳回帶 `#error=…invalid_client` 則 Update provider 重貼完整 32 字元 Channel Secret。
+     - ✅ **真人 LINE 登入實測通過**（2026-07-10，Joseph）：完整走完登入+授權+換 token+發 session，代表 Channel Secret 也正確。**LINE 這條 100% 完工。**
      - callback 已由 Joseph 加進 Login 頻道 2010579062。
+     - UI：登入鈕原本只在稿件庫 modal（`#libraryModal` 內 `#authBar`），主畫面看不到。已加主畫面 header 入口 `#syncEntry`「☁ 同步/登入同步/已同步」（隨狀態變字，onclick=openLib）。
      - 坑：①email scope 會炸（LINE email 要另申請，只留 openid/profile）②若日後加 profiles 表且 display_name NOT NULL→比照 92strings migration `20260704120000_handle_new_user_email_optional.sql` 改 trigger COALESCE（news_drafts 現況無此約束，暫踩不到）③別填錯專案（Custom provider 綁專案）。
      - 前置：需一個 LINE Login channel（可考慮複用 new-cpc-worker 的 LIFF channel 2010579062 對應的 Login channel，或新建）。
 3. **Worker 重指新專案**：`SUPABASE_URL` + `SUPABASE_SERVICE_KEY` secret 換成 CPCTR。〔Joseph 互動〕
