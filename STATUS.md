@@ -2,7 +2,9 @@
 
 > 單一真相。每次離開前更新（全域憲法收尾鐵律）。
 **最後更新：** 2026-07-10
-**整體狀態：** 🟢 桃園已上線 Cloudflare + 🟢 多單位導入框架 + 🟢 稿件庫跨裝置同步(LINE 登入實測通) + 🟢 後端搬遷至中油自有 Supabase(DB+LINE+Worker 完成／僅 Google 選配待接、前端待部署)
+**整體狀態：** 🟢 桃園已上線 Cloudflare + 🟢 多單位導入框架 + 🟢 稿件庫跨裝置同步(LINE 登入實測通+已部署正式站) + 🟢 後端搬遷至中油自有 Supabase(DB+LINE+Worker 完成並上線／僅 Google 選配待接／舊 launchdock DB 待正式確認後刪)
+
+> 2026-07-10 收尾：`feat/draft-library` 已 push；`docs/` 已 `wrangler pages deploy` 到 news-response(正式站 response.new-cpc.com + news-response.pages.dev)，pages.dev 實測帶 CPCTR key+☁同步。剩：Google provider(選配)、待正式站確認無誤後刪 launchdock 舊 cpc_*(破壞性,先問)。
 
 ## 2026-07-10 稿件庫同步 + 後端搬遷中油自有 Supabase ⭐（進行中，換手看這裡）
 > 分支 `feat/draft-library`（未 push）。核心任務：①稿件庫可重開/再送LLM優化 ②草稿跨裝置同步。
