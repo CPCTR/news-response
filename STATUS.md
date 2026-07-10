@@ -21,8 +21,10 @@
    - **Google provider**：Callback URL（給 Google Cloud 註冊）=`https://bqgsgfnxdlmrhmeyxkfq.supabase.co/auth/v1/callback`。⚠ 面板現況異常：Client IDs 欄被填成字串「CPCTR's Project」（非法，要真的 `…apps.googleusercontent.com`），且已存了一組 Client Secret（非我設，來源不明）——**Joseph 需用真正的 Google OAuth client id/secret 覆蓋後再開 Enable toggle**。我未改未存。
    - **LINE**（2026-07-10 查證＋建置，複用 92strings `oauth.ts`）：接法 = Supabase **Custom OAuth/OIDC Provider**，**不用 Worker/Edge Function**。前端已就緒（`web/index.html` 已 `loginWith('custom:line')`→`signInWithOAuth({provider:'custom:line'})`，`news_drafts` 已 `auth.uid()` RLS）。
      - ✅ **CPCTR Custom Provider 已建立並啟用**（2026-07-10，cic）：Identifier `line`（前端 `custom:line`）、OIDC Auto-discovery、Issuer `https://access.line.me`、Client ID=**2010578618**（複用舊 LINE Login channel）、Scopes `openid, profile`、Allow users without email ON。Client Secret 由 Joseph 手動貼。
-     - ⚠ **待驗**：存檔前讀到 secret 只有 11 字元（LINE Channel Secret 正常 32 hex），可能貼不完整→**以實際 LINE 登入為準**，若 `invalid_client` 就 Update provider 重貼完整 Channel Secret。
-     - ⚠ **待做（Joseph，LINE Developers）**：把 callback `https://bqgsgfnxdlmrhmeyxkfq.supabase.co/auth/v1/callback` 加進 channel 2010578618 的 Callback URL 清單（加法、不動原本）。沒加＝LINE 登入會被擋。
+     - ⚠ **修正**：Client ID 一度誤填 Messaging API 頻道 `2010578618`（那個沒 Callback URL、是 new-cpc-worker webhook bot）。正解 = **LINE Login 頻道 `2010579062`**（有 Callback URL、LIFF `2010579062-xDo4BzKa` 掛其下）。已改。
+     - ✅ **線路驗證通過（2026-07-10 curl 實測）**：`/auth/v1/authorize?provider=custom:line` → 302 → `access.line.me` 且 client_id=2010579062、redirect_uri=callback、scope=openid profile、PKCE 全對；LINE 再 302 到 login/consent（無錯誤）→ 證明 client_id 有效 + callback 已註冊。
+     - ⏳ **僅剩最後一哩**：真人登入 LINE+授權 → Supabase 用 Channel Secret 換 token 發 session。此步驗證 Channel Secret（原 11 字元疑慮）；需真人帳密，我不代做。Joseph 開 localhost:8788 點「以 LINE 登入」完成即確認；若跳回帶 `#error=…invalid_client` 則 Update provider 重貼完整 32 字元 Channel Secret。
+     - callback 已由 Joseph 加進 Login 頻道 2010579062。
      - 坑：①email scope 會炸（LINE email 要另申請，只留 openid/profile）②若日後加 profiles 表且 display_name NOT NULL→比照 92strings migration `20260704120000_handle_new_user_email_optional.sql` 改 trigger COALESCE（news_drafts 現況無此約束，暫踩不到）③別填錯專案（Custom provider 綁專案）。
      - 前置：需一個 LINE Login channel（可考慮複用 new-cpc-worker 的 LIFF channel 2010579062 對應的 Login channel，或新建）。
 3. **Worker 重指新專案**：`SUPABASE_URL` + `SUPABASE_SERVICE_KEY` secret 換成 CPCTR。〔Joseph 互動〕
