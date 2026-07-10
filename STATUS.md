@@ -15,9 +15,13 @@
   - 註：CPCTR 是**中油自己的 Supabase 帳號**（另一個 Chrome「cpc-58a」登入），MCP 碰不到，只能走 cic 儀表板。
 
 **下一個具體動作（剩餘，標註 owner）**
-1. **抓 CPCTR anon key**（cic /settings/api-keys，Supabase 當時維運事件頁面慢）→ 填 `web/index.html` 的 `#supabase` 區塊（url=`https://bqgsgfnxdlmrhmeyxkfq.supabase.co`）。〔我〕
+1. ✅ **抓 CPCTR anon key 完成**（2026-07-10，cic Browser 1＝589411a@gmail.com）：CPCTR 用 Supabase 新版 key 系統，取 **publishable key** `sb_publishable_445I76rNDvF14r68vWpWSA_IjaXM-nV`（可公開＋RLS，等同舊 anon）→ 已填 `web/index.html` 的 `#supabase`（url=`https://bqgsgfnxdlmrhmeyxkfq.supabase.co`）＋ `build_html.py` 重建 `docs/index.html` 驗證帶入 OK。
 2. **CPCTR 開 Auth provider：Google（原生）+ LINE（custom OIDC，Identifier `line`、issuer `https://access.line.me`、勾 email_optional）**。複用 92strings `feat/line-login-remove-lovable` 的 `oauth.ts` 坑。〔中油/Joseph 填 OAuth secret，我不碰憑證〕
-3. **Worker 重指新專案**：`SUPABASE_URL` + `service_role` secret 換成 CPCTR（`wrangler secret put`）。〔Joseph 互動〕
+3. **Worker 重指新專案**：`SUPABASE_URL` + `SUPABASE_SERVICE_KEY` secret 換成 CPCTR。〔Joseph 互動〕
+   - 2026-07-10 查證：這支 Worker = 已部署的 **`new-cpc-worker`**（不是 news-response-llm；後者純 LLM proxy 不碰 Supabase）。它用 `env.SUPABASE_URL` + `env.SUPABASE_SERVICE_KEY` 跑整套 pr-approval 簽核（cpc_cases/versions/case_steps/identities/bind_tokens/templates/positions）。
+   - ⚠ **帳號**：`new-cpc-worker` **不在** wrangler 現登入的 jjaimark1 帳號（`secret list` 回 Worker not found），屬 **589411 那個 Cloudflare 帳號**。要改 secret 得先 `wrangler login` 切過去（互動，Joseph 跑）或走該帳號 dashboard。
+   - 值：`SUPABASE_URL`=`https://bqgsgfnxdlmrhmeyxkfq.supabase.co`；`SUPABASE_SERVICE_KEY`= CPCTR 的 **secret key**（dashboard → Settings → API Keys → Secret keys 的 `sb_secret_…`，或 Legacy service_role JWT）。指令：`echo '<key>' | wrangler secret put SUPABASE_SERVICE_KEY --name new-cpc-worker`。
+   - ⚠ **源碼落差**：`new-cpc-worker` 原始碼不在任何 repo（repo 只有 stub README），僅部署版存在。改 secret 不需源碼；但要改邏輯得先找回源碼或從部署版反匯出。
 4. 端到端驗證：pr-assistant 簽核 + news-response 草稿同步 都打新專案 OK。〔我+cic〕
 5. **最後才做、先問**：launchdock 舊 `cpc_*` 退役刪除（破壞性）。〔待 Joseph 確認〕
 
