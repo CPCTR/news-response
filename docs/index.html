@@ -57,6 +57,7 @@
   .pill.on{background:#e6f4ea;color:var(--ok);border-color:#bfe3c9}
   @media(max-width:900px){.wrap{grid-template-columns:1fr}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <header>
@@ -275,10 +276,12 @@
     <h2 style="color:var(--cpc);margin:0">📚 稿件庫（已存草稿）</h2>
     <button class="ghost sm" onclick="closeLib()">關閉</button>
   </div>
-  <p class="muted" id="libSyncNote" style="margin:6px 0 0">目前存在這台裝置（localStorage），換裝置看不到。登入後可跨裝置同步（開發中）。</p>
+  <p class="muted" id="libSyncNote" style="margin:6px 0 0">目前存在這台裝置（localStorage），換裝置看不到。雲端同步未設定。</p>
+  <div class="row" id="authBar" style="margin:8px 0 0"></div>
   <div class="libwrap" id="libList"></div>
 </div></div>
 
+<script type="application/json" id="supabase">{"url":"","anon":""}</script>
 <script type="application/json" id="kb">{
   "meta": {
     "name": "桃園煉油廠新聞稿生成知識庫",
@@ -983,6 +986,49 @@ function renderLibList(){
 function loadCase(id){const c=findCase(id);if(!c)return null;draft.value=c.draft||'';CURRENT.f=null;CURRENT.parentId=id;showReviewNotes('');updateCount();closeLib();switchTab('form');return c;}
 function reopenDraft(id){const c=loadCase(id);if(!c)return;setStatus('已重開草稿 '+id+'，可編輯或按「♻ 再送 LLM 優化」');draft.scrollIntoView({behavior:'smooth',block:'center'});}
 async function reoptimizeDraft(id){const c=loadCase(id);if(!c)return;draft.scrollIntoView({behavior:'smooth',block:'center'});await generate('rewrite');setStatus('已依 '+id+' 優化，可按「📥 採用並學習」存為新版本');}
+
+// ===== 雲端同步（Supabase Auth + news_drafts；未設定則降級只存本機，零回歸）=====
+let SUPA=null, SESSION=null;
+function supaCfg(){try{return JSON.parse(document.getElementById('supabase').textContent||'{}');}catch(e){return {};}}
+function initSupa(){
+  const c=supaCfg();
+  if(!c.url||!c.anon||typeof supabase==='undefined'){ renderAuth(); return; } // 未設定或 CDN 未載入 → 只存本機
+  try{ SUPA=supabase.createClient(c.url,c.anon); }catch(e){ renderAuth(); return; }
+  SUPA.auth.getSession().then(({data})=>{ SESSION=data.session; renderAuth(); if(SESSION) syncPull(); });
+  SUPA.auth.onAuthStateChange((_e,s)=>{ SESSION=s; renderAuth(); if(s) syncPull(); });
+}
+function cloudOn(){return !!(SUPA&&SESSION);}
+function authUser(){const u=SESSION&&SESSION.user;if(!u)return '';const m=u.user_metadata||{};return m.name||m.full_name||u.email||u.id.slice(0,8);}
+async function loginWith(provider){ if(!SUPA){alert('雲端同步尚未設定（需先填入 Supabase URL/anon key）');return;} try{ await SUPA.auth.signInWithOAuth({provider,options:{redirectTo:location.href.split('#')[0]}}); }catch(e){alert('登入失敗：'+e.message);} }
+async function logout(){ if(SUPA){ await SUPA.auth.signOut(); SESSION=null; renderAuth(); setStatus('已登出（草稿仍留本機）'); } }
+function renderAuth(){
+  const note=document.getElementById('libSyncNote'), bar=document.getElementById('authBar');
+  if(!bar||!note) return;
+  if(!SUPA){ note.textContent='目前存在這台裝置（localStorage），換裝置看不到。雲端同步未設定。'; bar.innerHTML=''; return; }
+  if(cloudOn()){
+    note.textContent='已登入：'+authUser()+'　草稿已跨裝置同步（手機/電腦同一份）。';
+    bar.innerHTML='<span class="muted">☁ '+esc(authUser())+'</span> <button class="ghost sm" onclick="syncPull()">↻ 立即同步</button> <button class="ghost sm" onclick="logout()">登出</button>';
+  }else{
+    note.textContent='登入後草稿可跨裝置同步（手機存的，電腦也看得到）。';
+    bar.innerHTML='<button class="ok sm" onclick="loginWith(\'google\')">以 Google 登入</button> <button class="ghost sm" onclick="loginWith(\'custom:line\')">以 LINE 登入</button>';
+  }
+}
+function rowToCase(r){return {id:r.client_id, ts:r.ts||Date.parse(r.created_at)||0, tags:r.tags||[], casualty:r.casualty, reported:r.reported, facts:r.facts, draft:r.draft, versionOf:r.version_of||null};}
+function caseToRow(c){return {user_id:SESSION.user.id, client_id:c.id, unit:(window.UNIT_KEY||'default'), tags:c.tags||[], casualty:c.casualty, reported:c.reported, facts:c.facts, draft:c.draft, version_of:c.versionOf||null, ts:c.ts||0};}
+async function syncPull(){
+  if(!cloudOn())return;
+  try{
+    const {data,error}=await SUPA.from('news_drafts').select('*'); if(error)throw error;
+    const cloud=(data||[]).map(rowToCase), local=lib();
+    const byId={}; [...cloud,...local].forEach(c=>{ const p=byId[c.id]; if(!p||(c.ts||0)>(p.ts||0)) byId[c.id]=c; }); // client_id 去重、較新勝
+    const merged=Object.values(byId).sort((a,b)=>(b.ts||0)-(a.ts||0));
+    localStorage.setItem('caselib',JSON.stringify(merged)); updateLib();
+    const cloudIds=new Set(cloud.map(c=>c.id)), toPush=merged.filter(c=>!cloudIds.has(c.id)); // 本機獨有 → 推上雲
+    if(toPush.length) await SUPA.from('news_drafts').upsert(toPush.map(caseToRow),{onConflict:'user_id,client_id'});
+    setStatus('雲端同步完成（共 '+merged.length+' 筆）');
+  }catch(e){ setStatus('同步失敗：'+e.message); }
+}
+async function cloudPush(c){ if(!cloudOn())return; try{ await SUPA.from('news_drafts').upsert([caseToRow(c)],{onConflict:'user_id,client_id'}); }catch(e){ setStatus('雲端寫入失敗：'+e.message); } }
 function caseTags(f){return [...(f.loc||[]),...(f.mat||[]),...(f.cause||[]),...(f.status||[])];}
 function similarCases(f){
   const t=new Set(caseTags(f));
@@ -1002,7 +1048,7 @@ function learnFromDraft(){
   const c={id:'PR-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+Math.floor(Math.random()*900+100),
     ts:Date.now(), tags:caseTags(f), casualty:f.casualty, reported:f.reported,
     facts:factsBlock(f).slice(0,500), draft:publicDraft(), versionOf:CURRENT.parentId||null};
-  const a=lib(); a.unshift(c); saveLib(a);
+  const a=lib(); a.unshift(c); saveLib(a); cloudPush(c);
   const vnote=c.versionOf?'（優化自 '+c.versionOf+' 的新版本，舊版保留）':'';
   CURRENT.parentId=null;
   setStatus('已學習為案例 '+c.id+vnote+'，下次相似事件將自動調用');
@@ -1047,7 +1093,7 @@ function updateCount(){charCount.textContent=draft.value.length+' 字';}
 function clearAll(){document.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);document.querySelectorAll('.other').forEach(o=>{o.value='';o.style.display='none';});source.value='';freeNote.value='';casualty.value='';reported.value='';draft.value='';piiWarn.style.display='none';simCases.style.display='none';auditBox.style.display='none';document.getElementById('reviewNotes').style.display='none';setNow();updateCount();setStatus('已清除');}
 function setNow(){const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());evtTime.value=d.toISOString().slice(0,16);}
 
-buildChecks(); loadSettings(); setNow(); updateLib(); draft.addEventListener('input',updateCount);
+buildChecks(); loadSettings(); setNow(); updateLib(); initSupa(); draft.addEventListener('input',updateCount);
 </script>
 </body>
 </html>
