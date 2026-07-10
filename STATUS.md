@@ -19,9 +19,10 @@
 2. **CPCTR 開 Auth provider**。〔中油/Joseph 填 OAuth secret，我不碰憑證〕
    - ✅ **非機密 URL Configuration 已設**（2026-07-10，cic）：Site URL=`https://response.new-cpc.com`；Redirect URLs=`https://response.new-cpc.com/**`、`https://news-response.pages.dev/**`、`http://localhost:8788/**`。
    - **Google provider**：Callback URL（給 Google Cloud 註冊）=`https://bqgsgfnxdlmrhmeyxkfq.supabase.co/auth/v1/callback`。⚠ 面板現況異常：Client IDs 欄被填成字串「CPCTR's Project」（非法，要真的 `…apps.googleusercontent.com`），且已存了一組 Client Secret（非我設，來源不明）——**Joseph 需用真正的 Google OAuth client id/secret 覆蓋後再開 Enable toggle**。我未改未存。
-   - **LINE**（2026-07-10 查證，複用 92strings `oauth.ts`）：接法 = Supabase **Custom OAuth/OIDC Provider**（Free plan 可建 3 個），**不用 Worker/Edge Function**。前端已就緒（`web/index.html` 已 `loginWith('custom:line')`→`signInWithOAuth({provider:'custom:line'})`，`news_drafts` 已 `auth.uid()` RLS）。唯一缺 = CPCTR Dashboard 設 Custom Provider。
-     - Dashboard（Auth → Custom Providers → New Provider）值：Identifier `line`、Auto-discovery(OIDC)、Issuer `https://access.line.me`、Scopes **只留 `openid, profile`**、Allow users without email **開**。〔以上我可填〕Client ID=LINE Login **Channel ID**、Client Secret=**Channel Secret**〔Joseph 貼，別給 AI，測通後 regenerate〕。
-     - 設完把 callback `https://bqgsgfnxdlmrhmeyxkfq.supabase.co/auth/v1/callback` 貼回 LINE Developers→LINE Login channel→Callback URL。
+   - **LINE**（2026-07-10 查證＋建置，複用 92strings `oauth.ts`）：接法 = Supabase **Custom OAuth/OIDC Provider**，**不用 Worker/Edge Function**。前端已就緒（`web/index.html` 已 `loginWith('custom:line')`→`signInWithOAuth({provider:'custom:line'})`，`news_drafts` 已 `auth.uid()` RLS）。
+     - ✅ **CPCTR Custom Provider 已建立並啟用**（2026-07-10，cic）：Identifier `line`（前端 `custom:line`）、OIDC Auto-discovery、Issuer `https://access.line.me`、Client ID=**2010578618**（複用舊 LINE Login channel）、Scopes `openid, profile`、Allow users without email ON。Client Secret 由 Joseph 手動貼。
+     - ⚠ **待驗**：存檔前讀到 secret 只有 11 字元（LINE Channel Secret 正常 32 hex），可能貼不完整→**以實際 LINE 登入為準**，若 `invalid_client` 就 Update provider 重貼完整 Channel Secret。
+     - ⚠ **待做（Joseph，LINE Developers）**：把 callback `https://bqgsgfnxdlmrhmeyxkfq.supabase.co/auth/v1/callback` 加進 channel 2010578618 的 Callback URL 清單（加法、不動原本）。沒加＝LINE 登入會被擋。
      - 坑：①email scope 會炸（LINE email 要另申請，只留 openid/profile）②若日後加 profiles 表且 display_name NOT NULL→比照 92strings migration `20260704120000_handle_new_user_email_optional.sql` 改 trigger COALESCE（news_drafts 現況無此約束，暫踩不到）③別填錯專案（Custom provider 綁專案）。
      - 前置：需一個 LINE Login channel（可考慮複用 new-cpc-worker 的 LIFF channel 2010579062 對應的 Login channel，或新建）。
 3. **Worker 重指新專案**：`SUPABASE_URL` + `SUPABASE_SERVICE_KEY` secret 換成 CPCTR。〔Joseph 互動〕
