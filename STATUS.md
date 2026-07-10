@@ -5,7 +5,12 @@
 **整體狀態：** 🟢 桃園已上線 Cloudflare + 🟢 多單位導入框架 + 🟢 稿件庫跨裝置同步(LINE 登入實測通+已部署正式站) + 🟢 後端搬遷至中油自有 Supabase(DB+LINE+Worker 完成並上線／僅 Google 選配待接／舊 launchdock DB 待正式確認後刪)
 
 > 2026-07-10 收尾：`feat/draft-library` 已 push；`docs/` 已 `wrangler pages deploy` 到 news-response(正式站 response.new-cpc.com + news-response.pages.dev)，pages.dev 實測帶 CPCTR key+☁同步。剩：Google provider(選配)、待正式站確認無誤後刪 launchdock 舊 cpc_*(破壞性,先問)。
-> **待辦（測試確認 OK 後）：DNS 改位置** — Joseph 2026-07-10 提出。細節待確認：改哪個網域/記錄(response.new-cpc.com？new-cpc.com？)、指到哪(CPC 自有 Cloudflare/主機？)、目的(移交中油自有 infra？)。⚠ DNS 改錯會讓站直接掛，執行前務必確認記錄+目標值再動。
+> **待辦（測試確認 OK 後）：完整移交中油自有 infra + DNS 改指** — Joseph 2026-07-10 定調。
+> - **域名/DNS 留在 589411**（new-cpc.com 是 589411 買的，DNS zone 續留 589411 Cloudflare）。
+> - **站台本體搬到 589411a（中油自有帳號）**：GitHub repo + Cloudflare Pages/Worker 都移到 589411a；Supabase 已於本次搬完(CPCTR)。
+> - **DNS 改指**：response.new-cpc.com（及 /api Worker route）從現在指的 589411 Pages/Worker → 改指 589411a 的 Pages/Worker。
+> - ⚠ **跨帳號自訂網域坑**：Cloudflare Pages 自訂網域通常要求 zone 與 Pages project 同帳號；zone 在 589411、Pages 在 589411a 屬跨帳號，需用 CNAME 到 589411a 的 *.pages.dev 並處理 SSL/驗證，執行前先查 Cloudflare 跨帳號自訂網域限制。
+> - ⚠ DNS 改錯站直接掛，動前務必確認「改哪筆記錄 / 目標值 / 現值備份」再動；分 repo→Cloudflare→DNS 三段、每段驗證。
 
 ## 2026-07-10 稿件庫同步 + 後端搬遷中油自有 Supabase ⭐（進行中，換手看這裡）
 > 分支 `feat/draft-library`（未 push）。核心任務：①稿件庫可重開/再送LLM優化 ②草稿跨裝置同步。
