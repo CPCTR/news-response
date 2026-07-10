@@ -2,7 +2,7 @@
 
 > 單一真相。每次離開前更新（全域憲法收尾鐵律）。
 **最後更新：** 2026-07-10
-**整體狀態：** 🟢 桃園已上線 Cloudflare + 🟢 多單位導入框架 + 🟢 稿件庫跨裝置同步(LINE 登入實測通) + 🟡 後端搬遷至中油自有 Supabase(DB+LINE 完成／Google+Worker 待接)
+**整體狀態：** 🟢 桃園已上線 Cloudflare + 🟢 多單位導入框架 + 🟢 稿件庫跨裝置同步(LINE 登入實測通) + 🟢 後端搬遷至中油自有 Supabase(DB+LINE+Worker 完成／僅 Google 選配待接、前端待部署)
 
 ## 2026-07-10 稿件庫同步 + 後端搬遷中油自有 Supabase ⭐（進行中，換手看這裡）
 > 分支 `feat/draft-library`（未 push）。核心任務：①稿件庫可重開/再送LLM優化 ②草稿跨裝置同步。
@@ -28,7 +28,8 @@
      - UI：登入鈕原本只在稿件庫 modal（`#libraryModal` 內 `#authBar`），主畫面看不到。已加主畫面 header 入口 `#syncEntry`「☁ 同步/登入同步/已同步」（隨狀態變字，onclick=openLib）。
      - 坑：①email scope 會炸（LINE email 要另申請，只留 openid/profile）②若日後加 profiles 表且 display_name NOT NULL→比照 92strings migration `20260704120000_handle_new_user_email_optional.sql` 改 trigger COALESCE（news_drafts 現況無此約束，暫踩不到）③別填錯專案（Custom provider 綁專案）。
      - 前置：需一個 LINE Login channel（可考慮複用 new-cpc-worker 的 LIFF channel 2010579062 對應的 Login channel，或新建）。
-3. **Worker 重指新專案**：`SUPABASE_URL` + `SUPABASE_SERVICE_KEY` secret 換成 CPCTR。〔Joseph 互動〕
+3. ✅ **Worker 重指完成並驗證**（2026-07-10）：`new-cpc-worker` 的 `SUPABASE_URL`+`SUPABASE_SERVICE_KEY` 已由 Joseph 在 Cloudflare Dashboard 改指 CPCTR。curl `/approval/templates`＋`/approval/board` 皆 200 且回得出搬過去的 templates/positions/cases → 簽核 bot 已在 CPCTR，與前端同 DB。
+   - ⚠ 坑：`SUPABASE_URL` 是**明文 var 不是 secret**，wrangler `secret put` 撞名（error 10053 binding already in use）；改 var 需源碼（不在 repo）→ 用 **Dashboard → Worker → Settings → Variables and Secrets** 改最安全。`SUPABASE_SERVICE_KEY` 用 CPCTR 的 **legacy service_role JWT**（worker 拿它當 apikey+Bearer 繞 RLS）。
    - 2026-07-10 查證：這支 Worker = 已部署的 **`new-cpc-worker`**（不是 news-response-llm；後者純 LLM proxy 不碰 Supabase）。它用 `env.SUPABASE_URL` + `env.SUPABASE_SERVICE_KEY` 跑整套 pr-approval 簽核（cpc_cases/versions/case_steps/identities/bind_tokens/templates/positions）。
    - ⚠ **帳號**：`new-cpc-worker` **不在** wrangler 現登入的 jjaimark1 帳號（`secret list` 回 Worker not found），屬 **589411 那個 Cloudflare 帳號**。要改 secret 得先 `wrangler login` 切過去（互動，Joseph 跑）或走該帳號 dashboard。
    - 值：`SUPABASE_URL`=`https://bqgsgfnxdlmrhmeyxkfq.supabase.co`；`SUPABASE_SERVICE_KEY`= CPCTR 的 **secret key**（dashboard → Settings → API Keys → Secret keys 的 `sb_secret_…`，或 Legacy service_role JWT）。指令：`echo '<key>' | wrangler secret put SUPABASE_SERVICE_KEY --name new-cpc-worker`。
