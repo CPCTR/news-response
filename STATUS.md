@@ -16,7 +16,10 @@
 
 **下一個具體動作（剩餘，標註 owner）**
 1. ✅ **抓 CPCTR anon key 完成**（2026-07-10，cic Browser 1＝589411a@gmail.com）：CPCTR 用 Supabase 新版 key 系統，取 **publishable key** `sb_publishable_445I76rNDvF14r68vWpWSA_IjaXM-nV`（可公開＋RLS，等同舊 anon）→ 已填 `web/index.html` 的 `#supabase`（url=`https://bqgsgfnxdlmrhmeyxkfq.supabase.co`）＋ `build_html.py` 重建 `docs/index.html` 驗證帶入 OK。
-2. **CPCTR 開 Auth provider：Google（原生）+ LINE（custom OIDC，Identifier `line`、issuer `https://access.line.me`、勾 email_optional）**。複用 92strings `feat/line-login-remove-lovable` 的 `oauth.ts` 坑。〔中油/Joseph 填 OAuth secret，我不碰憑證〕
+2. **CPCTR 開 Auth provider**。〔中油/Joseph 填 OAuth secret，我不碰憑證〕
+   - ✅ **非機密 URL Configuration 已設**（2026-07-10，cic）：Site URL=`https://response.new-cpc.com`；Redirect URLs=`https://response.new-cpc.com/**`、`https://news-response.pages.dev/**`、`http://localhost:8788/**`。
+   - **Google provider**：Callback URL（給 Google Cloud 註冊）=`https://bqgsgfnxdlmrhmeyxkfq.supabase.co/auth/v1/callback`。⚠ 面板現況異常：Client IDs 欄被填成字串「CPCTR's Project」（非法，要真的 `…apps.googleusercontent.com`），且已存了一組 Client Secret（非我設，來源不明）——**Joseph 需用真正的 Google OAuth client id/secret 覆蓋後再開 Enable toggle**。我未改未存。
+   - ⚠ **LINE**：**不在 Supabase 原生 provider 清單**（清單只有 Apple/Azure/…/Google/Kakao/Keycloak/LinkedIn…無 LINE）。前端 `signInWithOAuth({provider:'line'})` 無法直接靠原生 provider 成立。launchdock 當初怎麼接 LINE 需回查（memory 記「custom OIDC」＋92strings `oauth.ts`），這是獨立待辦，先擱置不影響 Google 路。
 3. **Worker 重指新專案**：`SUPABASE_URL` + `SUPABASE_SERVICE_KEY` secret 換成 CPCTR。〔Joseph 互動〕
    - 2026-07-10 查證：這支 Worker = 已部署的 **`new-cpc-worker`**（不是 news-response-llm；後者純 LLM proxy 不碰 Supabase）。它用 `env.SUPABASE_URL` + `env.SUPABASE_SERVICE_KEY` 跑整套 pr-approval 簽核（cpc_cases/versions/case_steps/identities/bind_tokens/templates/positions）。
    - ⚠ **帳號**：`new-cpc-worker` **不在** wrangler 現登入的 jjaimark1 帳號（`secret list` 回 Worker not found），屬 **589411 那個 Cloudflare 帳號**。要改 secret 得先 `wrangler login` 切過去（互動，Joseph 跑）或走該帳號 dashboard。
