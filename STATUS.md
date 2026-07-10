@@ -1,8 +1,27 @@
 # STATUS — news-response
 
 > 單一真相。每次離開前更新（全域憲法收尾鐵律）。
-**最後更新：** 2026-06-22
-**整體狀態：** 🟢 桃園已上線 Cloudflare + 🟢 多單位導入框架與 onboarding skill 已建並乾跨驗證
+**最後更新：** 2026-07-10
+**整體狀態：** 🟢 桃園已上線 Cloudflare + 🟢 多單位導入框架 + 🟡 稿件庫跨裝置同步(前端已建/待接雲) + 🟡 後端搬遷至中油自有 Supabase(schema+資料已搬/待接線)
+
+## 2026-07-10 稿件庫同步 + 後端搬遷中油自有 Supabase ⭐（進行中，換手看這裡）
+> 分支 `feat/draft-library`（未 push）。核心任務：①稿件庫可重開/再送LLM優化 ②草稿跨裝置同步。
+> 過程中決策擴大為：把 new-cpc/news-response 後端從 launchdock（Joseph 私人）搬到中油自有 Supabase。
+
+**已完成（已驗證）**
+- ✅ 前端稿件庫面板：`web/index.html` libCount 徽章→modal，列已存草稿，每筆「↩重開」「♻再送LLM優化」+版本溯源（versionOf）。瀏覽器實測過。
+- ✅ 前端 Supabase Auth 同步層：Google/LINE 登入列、`syncPull`合併去重、`cloudPush`存即上雲；**未設定/未登入→只存本機（零回歸）**。已測未設定＋假設定兩態。
+- ✅ **DB 搬遷完成**：中油自有專案 **CPCTR's Project**（ref `bqgsgfnxdlmrhmeyxkfq`，org `CPCTR's Org`，AWS 東京 ap-northeast-1）。用 cic 在 SQL Editor 跑完整 migration（scratchpad `cpctr_migrate.sql`）：8 張 `cpc_*` schema+資料列數與 launchdock 全一致 + `news_drafts` 建好。RLS/revoke 安全姿態複製 launchdock migration 001。
+  - 註：CPCTR 是**中油自己的 Supabase 帳號**（另一個 Chrome「cpc-58a」登入），MCP 碰不到，只能走 cic 儀表板。
+
+**下一個具體動作（剩餘，標註 owner）**
+1. **抓 CPCTR anon key**（cic /settings/api-keys，Supabase 當時維運事件頁面慢）→ 填 `web/index.html` 的 `#supabase` 區塊（url=`https://bqgsgfnxdlmrhmeyxkfq.supabase.co`）。〔我〕
+2. **CPCTR 開 Auth provider：Google（原生）+ LINE（custom OIDC，Identifier `line`、issuer `https://access.line.me`、勾 email_optional）**。複用 92strings `feat/line-login-remove-lovable` 的 `oauth.ts` 坑。〔中油/Joseph 填 OAuth secret，我不碰憑證〕
+3. **Worker 重指新專案**：`SUPABASE_URL` + `service_role` secret 換成 CPCTR（`wrangler secret put`）。〔Joseph 互動〕
+4. 端到端驗證：pr-assistant 簽核 + news-response 草稿同步 都打新專案 OK。〔我+cic〕
+5. **最後才做、先問**：launchdock 舊 `cpc_*` 退役刪除（破壞性）。〔待 Joseph 確認〕
+
+> 資料 dump（含 line_uid/姓名，屬個資）只在 scratchpad，**不進 git**。committed 的 002 只有 news_drafts schema。cpc_* 搬遷 schema 待補一份 schema-only migration 進 new-cpc repo。
 
 ## 多單位導入框架（2026-06-22 新增，核心進展）⭐
 目標：降低「把這套助理複製給桃園以外中油單位」的門檻 → 做成 skill＋單位包。
