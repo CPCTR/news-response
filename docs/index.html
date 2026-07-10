@@ -40,6 +40,12 @@
   .status{font-size:12px;color:var(--muted);margin:8px 0}
   .sim{background:#eef7ff;border:1px solid #cfe2ff;border-radius:8px;padding:8px 10px;font-size:12.5px;color:#0b3d91;margin:6px 0}
   .sim b{color:var(--cpc)} .sim .c{display:block;padding:2px 0;border-top:1px dashed #cfe2ff;margin-top:4px}
+  .libwrap{max-height:60vh;overflow:auto;margin-top:8px}
+  .libitem{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:6px 0;background:#fafbfe}
+  .libitem .h{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+  .libitem .h .id{font-weight:700;color:var(--cpc)}
+  .libitem .pv{font-size:12.5px;color:#33373f;margin:5px 0;max-height:3.4em;overflow:hidden;white-space:pre-wrap}
+  #libCount{cursor:pointer}#libCount:hover{text-decoration:underline}
   .auditpanel{background:#f7fbf8;border:1px solid #bfe3c9;border-radius:8px;padding:10px 12px;margin-top:8px;white-space:pre-wrap;font-size:13px}
   .auditpanel.fail{background:#fff5f5;border-color:#f0b9b9}
   .reviewnotes{background:#fbfbfd;border:1px dashed #c7cdd9;border-radius:8px;padding:10px 12px;margin-top:8px;white-space:pre-wrap;font-size:12.5px;color:#5f6571}
@@ -60,7 +66,7 @@
     <button class="tab on" id="tabForm" onclick="switchTab('form')">📋 表單填寫模式</button>
     <button class="tab" id="tabTerm" onclick="switchTab('term')">✍ 術語修正</button>
   </div>
-  <span class="ver" id="libCount">案例庫：0</span>
+  <span class="ver" id="libCount" onclick="openLib()" title="點擊查看已存草稿（稿件庫）">📚 案例庫：0</span>
   <span class="ver" style="opacity:.6">V2.1</span>
 </header>
 
@@ -261,6 +267,16 @@
       <button onclick="saveCorr()">儲存</button>
     </div>
   </div>
+</div></div>
+
+<!-- 稿件庫 modal（已存草稿：可重開 + 再送 LLM 優化）-->
+<div class="modal" id="libraryModal"><div class="box" style="max-width:660px">
+  <div class="row" style="justify-content:space-between">
+    <h2 style="color:var(--cpc);margin:0">📚 稿件庫（已存草稿）</h2>
+    <button class="ghost sm" onclick="closeLib()">關閉</button>
+  </div>
+  <p class="muted" id="libSyncNote" style="margin:6px 0 0">目前存在這台裝置（localStorage），換裝置看不到。登入後可跨裝置同步（開發中）。</p>
+  <div class="libwrap" id="libList"></div>
 </div></div>
 
 <script type="application/json" id="kb">{
@@ -940,10 +956,33 @@ async function fixTerms(){
 }
 
 // ===== 案例庫（回填學習）＋ 相似案例調用 =====
-let CURRENT={f:null};
+let CURRENT={f:null,parentId:null};
 function lib(){return JSON.parse(localStorage.getItem('caselib')||'[]');}
 function saveLib(a){localStorage.setItem('caselib',JSON.stringify(a));updateLib();}
-function updateLib(){libCount.textContent='案例庫：'+lib().length;}
+function updateLib(){libCount.textContent='📚 案例庫：'+lib().length; const m=document.getElementById('libraryModal'); if(m&&m.style.display==='flex') renderLibList();}
+// ===== 稿件庫 UI：瀏覽已存草稿 → 重開 / 再送 LLM 優化 =====
+function fmtTs(ts){if(!ts)return '';const d=new Date(ts);const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());}
+function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function findCase(id){return lib().find(c=>c.id===id);}
+function openLib(){renderLibList();document.getElementById('libraryModal').style.display='flex';}
+function closeLib(){document.getElementById('libraryModal').style.display='none';}
+function renderLibList(){
+  const box=document.getElementById('libList');const a=lib();
+  if(!a.length){box.innerHTML='<p class="muted" style="margin:12px 0">尚無已存草稿。生成草稿後按「📥 採用並學習」即可存入稿件庫。</p>';return;}
+  box.innerHTML=a.map(c=>{
+    const tags=(c.tags||[]).slice(0,5).join('、');
+    const d=(c.draft||'');const pv=esc(d.slice(0,120))+(d.length>120?'…':'');
+    const ver=c.versionOf?`<span>↻ 優化自 ${esc(c.versionOf)}</span>`:'';
+    return `<div class="libitem"><div class="h"><span class="id">${esc(c.id)}</span><span>${fmtTs(c.ts)}</span>${ver}</div>`
+      +(tags?`<div class="muted">${esc(tags)}</div>`:'')
+      +`<div class="pv">${pv}</div>`
+      +`<div class="row"><button class="ghost sm" onclick="reopenDraft('${esc(c.id)}')">↩ 重開到草稿框</button>`
+      +`<button class="ok sm" onclick="reoptimizeDraft('${esc(c.id)}')">♻ 再送 LLM 優化</button></div></div>`;
+  }).join('');
+}
+function loadCase(id){const c=findCase(id);if(!c)return null;draft.value=c.draft||'';CURRENT.f=null;CURRENT.parentId=id;showReviewNotes('');updateCount();closeLib();switchTab('form');return c;}
+function reopenDraft(id){const c=loadCase(id);if(!c)return;setStatus('已重開草稿 '+id+'，可編輯或按「♻ 再送 LLM 優化」');draft.scrollIntoView({behavior:'smooth',block:'center'});}
+async function reoptimizeDraft(id){const c=loadCase(id);if(!c)return;draft.scrollIntoView({behavior:'smooth',block:'center'});await generate('rewrite');setStatus('已依 '+id+' 優化，可按「📥 採用並學習」存為新版本');}
 function caseTags(f){return [...(f.loc||[]),...(f.mat||[]),...(f.cause||[]),...(f.status||[])];}
 function similarCases(f){
   const t=new Set(caseTags(f));
@@ -962,10 +1001,12 @@ function learnFromDraft(){
   const f=CURRENT.f||collect();
   const c={id:'PR-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+Math.floor(Math.random()*900+100),
     ts:Date.now(), tags:caseTags(f), casualty:f.casualty, reported:f.reported,
-    facts:factsBlock(f).slice(0,500), draft:publicDraft()};
+    facts:factsBlock(f).slice(0,500), draft:publicDraft(), versionOf:CURRENT.parentId||null};
   const a=lib(); a.unshift(c); saveLib(a);
-  setStatus('已學習為案例 '+c.id+'，下次相似事件將自動調用');
-  alert('✅ 已採用並學習為案例 '+c.id+'\n案例庫共 '+a.length+' 筆。換一個相似事件再生成，即可看到它被自動調用。');
+  const vnote=c.versionOf?'（優化自 '+c.versionOf+' 的新版本，舊版保留）':'';
+  CURRENT.parentId=null;
+  setStatus('已學習為案例 '+c.id+vnote+'，下次相似事件將自動調用');
+  alert('✅ 已採用並學習為案例 '+c.id+'\n'+(c.versionOf?'（這是 '+c.versionOf+' 的新版本，舊版仍保留）\n':'')+'案例庫共 '+a.length+' 筆。點右上「📚 案例庫」可瀏覽、重開或再優化。');
 }
 function exportLib(){const b=new Blob([JSON.stringify(lib(),null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='caselib.json';a.click();}
 function importLib(inp){const fr=new FileReader();fr.onload=()=>{try{const a=JSON.parse(fr.result);if(Array.isArray(a)){saveLib(a);alert('已匯入 '+a.length+' 筆案例。');}}catch{alert('檔案格式錯誤');}};fr.readAsText(inp.files[0]);}
