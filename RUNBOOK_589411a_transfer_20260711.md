@@ -35,7 +35,7 @@
 - [x] **2B-2** 589411a KV `TIERS` 建好 id `267d75996ffe4577a1839364dd6f2186`（`new-cpc/worker/wrangler.toml` 已更新、註解保留舊 589411 id）。另註冊 workers.dev 子網域 **`cpctr`**（API PUT）。
 - [x] **2B-3** 兩支 worker 部署到 589411a：`new-cpc-worker.cpctr.workers.dev`(c8b81c9a)、`news-response-llm.cpctr.workers.dev`(635737da)。⚠ `news-response-llm` 的 route（zone new-cpc.com 在 589411、跨帳號）已註解、改開 `workers_dev=true` 用原生網址驗證（跨帳號路由留 2C）。
 - [x] **2B-4** Secrets 經 Keychain（`cf-589411a-*`，值不進對話）灌入：`new-cpc-worker`=SUPABASE_SERVICE_KEY/LINE_CHANNEL_TOKEN/LINE_CHANNEL_SECRET/ANTHROPIC_API_KEY/OPENROUTER_API_KEY；`news-response-llm`=GITHUB_TOKEN/OPENROUTER_API_KEY/ANTHROPIC_API_KEY。`secret list` 驗證名單到齊。
-- [ ] **2B-5** Pages（hub ＋ apps ＋ news-response docs 稿件庫）在 589411a 重建，接 2A 的鏡像 repo。⚠ new-cpc hub 是 Astro build、`apps/pr-approval` 等前端源碼不在 repo（部署版才有）——需決定重建 or 先只上 news-response docs。
+- [x] **2B-5（MVP）** Pages 上 589411a：①`news-response` docs → `news-response-cy7.pages.dev`（生稿頁,200）；②`new-cpc` hub（Astro build dist）→ `new-cpc.pages.dev`（200）。⏸ **戰情表 `apps/pr-approval` 延後**：源碼不在 repo，簽核先走 LINE bot 頂著，併入「稿件收斂」支線一起重建。（`news-response` 子網域被占→自動 `-cy7` 尾綴，2C 用自訂網域指過來即可。）
 - [x] **2B-6**（worker 部分）驗證通過：new-cpc-worker `/healthz` 200、`/approval/templates`＋`/board` 200 回 CPCTR 資料；news-response-llm `/api/generate` 405(存活)。LIFF/LINE 冒煙測試待 2C 網域接上再做。
 
 ### 2C. DNS 段（最後、可回退）
