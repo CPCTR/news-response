@@ -1,7 +1,14 @@
 # STATUS — news-response
 
 > 單一真相。每次離開前更新（全域憲法收尾鐵律）。
-**最後更新：** 2026-07-10
+**最後更新：** 2026-07-11
+
+## 2026-07-11 移交 589411a runbook 執行中（Phase 1 完成）⭐
+> 定稿 runbook：`RUNBOOK_589411a_transfer_20260711.md`（Fable 產、CC 執行）。決策：①先驗 Google 登入/Access 再移交 ②舊表立即改名封存、真刪等移交後穩定 7 天 ③repo 589411a 鏡像單向推、589411 留備份。
+- ✅ **Phase 1 舊表封存完成**（2026-07-11 18:01 CST）：launchdock（ref `lxudxtpfenotkpgmhomq`）8 張 `cpc_*` 已改名 `cpc_old_*`：`cpc_old_positions`(23)/`cpc_old_templates`(5)/`cpc_old_template_steps`(28)/`cpc_old_identities`(3)/`cpc_old_bind_tokens`(6)/`cpc_old_versions`(5)/`cpc_old_cases`(5)/`cpc_old_case_steps`(11)。⚠ `news_drafts` launchdock 本無此表（建在 CPCTR），不適用。curl `new-cpc-worker` `/approval/templates`+`/board` 仍 200 → worker 讀 CPCTR、零影響。**回退**：把 `cpc_old_*` 一鍵 `RENAME TO cpc_*` 即復原（FK/RLS/序列隨 OID 走）。
+- ⏳ **DROP 排程**：Phase 2 移交完成＋正式站穩定 7 天後（≥2026-07-18），經 Joseph 明確授權才 `DROP cpc_old_*`。
+- ⏳ **Phase 0（Joseph，gate Phase 2）**：Google 真人登入實測、Cloudflare Access 員工 Gmail 白名單。
+- ⏳ **Phase 2（待 Phase 0 過）**：repo 鏡像→589411a Cloudflare(worker/KV/Pages)→DNS 改指，需 589411a 互動登入。
 **整體狀態：** 🟢 桃園已上線 Cloudflare + 🟢 多單位導入框架 + 🟢 稿件庫跨裝置同步(LINE 登入實測通+已部署正式站) + 🟢 後端搬遷至中油自有 Supabase(DB+LINE+Worker 完成並上線／僅 Google 選配待接／舊 launchdock DB 待正式確認後刪)
 
 > 2026-07-10 收尾：`feat/draft-library` 已 push；`docs/` 已 `wrangler pages deploy` 到 news-response(正式站 response.new-cpc.com + news-response.pages.dev)，pages.dev 實測帶 CPCTR key+☁同步。剩：Google provider(選配)、待正式站確認無誤後刪 launchdock 舊 cpc_*(破壞性,先問)。
