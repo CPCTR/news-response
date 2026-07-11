@@ -40,7 +40,11 @@
 
 ### 2C. DNS 段（最後、可回退）
 
-- [ ] **2C-1** 前置查證：Cloudflare 跨帳號自訂網域限制（zone 在 589411、Pages/Worker 在 589411a）。查完把結論記進本文件再動手。
+- [x] **2C-1 查證結論（2026-07-11，Cloudflare 官方文件）**：跨帳號自訂網域**不能用原生 Custom Domain**——Workers/Pages Custom Domain 文件明寫「cannot create a Custom Domain on a zone you do not own」；`response.new-cpc.com` zone 屬 589411，589411a 加不了。可行路徑只有三條，**這是要 Joseph 拍板的決策點**：
+  - **① 把 new-cpc.com 的 DNS zone 搬到 589411a**（技術最簡：同帳號自訂網域原生可用、免費自動 SSL）。域名「註冊/擁有」與「DNS zone 在哪帳號」是兩回事，可只搬 zone(改 NS)不動註冊。⚠ 但若 new-cpc.com 是用 **Cloudflare Registrar 在 589411 註冊**，Registrar 綁定 zone 同帳號、無法只搬 zone → 需先確認註冊在哪。此路**牴觸原「DNS 留 589411」決策**，要 Joseph 重新定調。
+  - **② Cloudflare for SaaS（O2O 橘對橘自訂主機名）**：保留 zone 在 589411，589411a 開 SaaS custom hostname + fallback origin，589411 設 proxied CNAME + TXT 驗證。**保留原決策但最複雜、且 SaaS 是付費加值**（免費額度外要錢），Pages/Worker 與 SaaS 整合繁瑣。
+  - **③ 589411 保留一層薄代理**指到 589411a：589411 仍在路徑上，**牴觸「完整移交」目的**，不建議。
+  - **待 Joseph 決定走哪條，才寫 2C-2～2C-5 的確切 DNS 動作。** 前置事實待確認：new-cpc.com 註冊在哪（Cloudflare Registrar 589411？外部 registrar？）。
 - [ ] **2C-2** 備份：記錄 `new-cpc.com` zone 現有相關 DNS 記錄與 route 的「記錄名／現值／目標值」。
 - [ ] **2C-3** 切換：`response.new-cpc.com` CNAME 指向 589411a 的 `*.pages.dev`；`/api/*` route 改指 589411a worker。zone 本身**留在 589411**（域名歸屬）。
 - [ ] **2C-4** 驗證：正式網址全流程（LINE 登入、簽核看板、送簽通知）；LINE Developers 後台 webhook URL 若有變動同步更新。
