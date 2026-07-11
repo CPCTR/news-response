@@ -92,6 +92,18 @@
 ### 2Ca-7 回退
 - [ ] **2Ca-7** move **完成前**：完全可回退（未動註冊）。move **完成後**異常：zone 已在 589411a → 改 **589411a 的 DNS** 把 response/api 指回 589411 worker/Pages（fallback 未拆）；註冊本身 30 天內不能再 move。
 
+## Phase 4：戰情室上雲（589411a 底座已就緒，可與 2C 平行）〔CC〕
+
+> 規格＝`news-monitor/WARROOM_DEV_PLAN.md` §8.5c（雲端呈現）／§8.5d（通用截圖入庫 API）。589411a 的 Cloudflare（token/KV/Pages/Workers AI）在 2B 已備妥 → warroom worker 直接建在同帳號，不必等 2C 域名。
+> **不與交付混庫**：warroom 用**獨立 worker**（不塞 new-cpc-worker）；資料先用 KV，日後 B軌上雲再遷 Supabase。
+
+- [x] **4-1 token 自證通過**（2026-07-12）：`wrangler whoami`→589411a account `ca3e37fa2f5e10d85031d34cb3b988fd` ✅；`gh auth status`→登入 `589411`(scopes repo/workflow)、`gh repo view CPCTR/new-cpc`→PRIVATE 可見可推 ✅；Supabase CPCTR 非 MCP 可達(已知)，warroom 先用 KV 不需它 ✅。
+- [ ] **4-2 warroom ingest worker**：589411a 新 worker `warroom-cpc`，端點 `POST /warroom/ingest`(收 warroom.json，Bearer)、`POST /warroom/ingest-image`(§8.5d，收圖+LLM vision 抽取)、`GET /warroom/`(LINE 登入+KV 白名單→頁面)。secrets 走 Keychain，不進對話。
+- [ ] **4-3 本機推送**：`news-monitor/push_warroom.py` 把 warroom.json POST 到 4-2 端點（Bearer token，失敗本地排隊重試）。原始高解截圖留本機/R2，只推摘要+縮圖。
+- [ ] **4-4 中油可視**：LIFF/LINE 登入 → 白名單內帳號看得到 warroom；白名單外看不到。雙時間戳(generated_at/received_at)+斷流紅橫幅上線。
+- [ ] **4-5 驗收**：手機(行動網路)LINE 登入看到戰情室；未帶 token 的 POST 被拒；斷流測試出現紅橫幅；grep 推送 payload 不含 FB 憑證/cookies。
+- [ ] **4-6 域名接入**：2Ca 完成後，warroom 綁自訂網域（如 `warroom.new-cpc.com`）；未完成前用 `warroom-cpc.cpctr.workers.dev` 原生網址先給中油看。
+
 ## Phase 3：收尾（Phase 2 後穩定 7 天）
 
 - [ ] **P3-1** Joseph 授權後 DROP `cpc_old_*`（launchdock 混庫技術債清除）。
