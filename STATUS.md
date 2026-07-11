@@ -40,9 +40,9 @@
 3. ✅ **Worker 重指完成並驗證**（2026-07-10）：`new-cpc-worker` 的 `SUPABASE_URL`+`SUPABASE_SERVICE_KEY` 已由 Joseph 在 Cloudflare Dashboard 改指 CPCTR。curl `/approval/templates`＋`/approval/board` 皆 200 且回得出搬過去的 templates/positions/cases → 簽核 bot 已在 CPCTR，與前端同 DB。
    - ⚠ 坑：`SUPABASE_URL` 是**明文 var 不是 secret**，wrangler `secret put` 撞名（error 10053 binding already in use）；改 var 需源碼（不在 repo）→ 用 **Dashboard → Worker → Settings → Variables and Secrets** 改最安全。`SUPABASE_SERVICE_KEY` 用 CPCTR 的 **legacy service_role JWT**（worker 拿它當 apikey+Bearer 繞 RLS）。
    - 2026-07-10 查證：這支 Worker = 已部署的 **`new-cpc-worker`**（不是 news-response-llm；後者純 LLM proxy 不碰 Supabase）。它用 `env.SUPABASE_URL` + `env.SUPABASE_SERVICE_KEY` 跑整套 pr-approval 簽核（cpc_cases/versions/case_steps/identities/bind_tokens/templates/positions）。
-   - ⚠ **帳號**：`new-cpc-worker` **不在** wrangler 現登入的 jjaimark1 帳號（`secret list` 回 Worker not found），屬 **589411 那個 Cloudflare 帳號**。要改 secret 得先 `wrangler login` 切過去（互動，Joseph 跑）或走該帳號 dashboard。
+   - ⚠ **帳號（2026-07-11 更正）**：`new-cpc-worker` 在 **589411@gmail.com** Cloudflare 帳號（account `0b3e3ff0e2881933499cc1a93e8661c5`）。**wrangler 本機已登入 589411**（`whoami` 驗證，token 含 workers/workers_kv/d1 write）→ CC 現在就能直接改 secret / 操作 KV，**不需重登**。（舊註記寫「現登入 jjaimark1」是過時錯誤；jjaimark1 是 masters-hub 的 Gem/GPT 作者帳號，與本專案無關。）
    - 值：`SUPABASE_URL`=`https://bqgsgfnxdlmrhmeyxkfq.supabase.co`；`SUPABASE_SERVICE_KEY`= CPCTR 的 **secret key**（dashboard → Settings → API Keys → Secret keys 的 `sb_secret_…`，或 Legacy service_role JWT）。指令：`echo '<key>' | wrangler secret put SUPABASE_SERVICE_KEY --name new-cpc-worker`。
-   - ⚠ **源碼落差**：`new-cpc-worker` 原始碼不在任何 repo（repo 只有 stub README），僅部署版存在。改 secret 不需源碼；但要改邏輯得先找回源碼或從部署版反匯出。
+   - ✅ **源碼已進版控（2026-07-11 更正）**：`new-cpc-worker` 原始碼已在 **`new-cpc/worker/`**（worker.js + wrangler.toml + README，2026-07-10 從部署版反建取回，`node --check` 過；功能等價、非位元組一致，redeploy 前照 README 檢查清單）。13 個明文 var 亦已從線上 settings API 取回進 `wrangler.toml`。
 4. 端到端驗證：pr-assistant 簽核 + news-response 草稿同步 都打新專案 OK。〔我+cic〕
 5. **最後才做、先問**：launchdock 舊 `cpc_*` 退役刪除（破壞性）。〔待 Joseph 確認〕
 
