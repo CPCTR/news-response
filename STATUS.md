@@ -3,12 +3,22 @@
 > 單一真相。每次離開前更新（全域憲法收尾鐵律）。
 **最後更新：** 2026-07-11
 
-## 2026-07-11 移交 589411a runbook 執行中（Phase 1 完成）⭐
-> 定稿 runbook：`RUNBOOK_589411a_transfer_20260711.md`（Fable 產、CC 執行）。決策：①先驗 Google 登入/Access 再移交 ②舊表立即改名封存、真刪等移交後穩定 7 天 ③repo 589411a 鏡像單向推、589411 留備份。
-- ✅ **Phase 1 舊表封存完成**（2026-07-11 18:01 CST）：launchdock（ref `lxudxtpfenotkpgmhomq`）8 張 `cpc_*` 已改名 `cpc_old_*`：`cpc_old_positions`(23)/`cpc_old_templates`(5)/`cpc_old_template_steps`(28)/`cpc_old_identities`(3)/`cpc_old_bind_tokens`(6)/`cpc_old_versions`(5)/`cpc_old_cases`(5)/`cpc_old_case_steps`(11)。⚠ `news_drafts` launchdock 本無此表（建在 CPCTR），不適用。curl `new-cpc-worker` `/approval/templates`+`/board` 仍 200 → worker 讀 CPCTR、零影響。**回退**：把 `cpc_old_*` 一鍵 `RENAME TO cpc_*` 即復原（FK/RLS/序列隨 OID 走）。
-- ⏳ **DROP 排程**：Phase 2 移交完成＋正式站穩定 7 天後（≥2026-07-18），經 Joseph 明確授權才 `DROP cpc_old_*`。
-- ⏳ **Phase 0（Joseph，gate Phase 2）**：Google 真人登入實測、Cloudflare Access 員工 Gmail 白名單。
-- ⏳ **Phase 2（待 Phase 0 過）**：repo 鏡像→589411a Cloudflare(worker/KV/Pages)→DNS 改指，需 589411a 互動登入。
+## 2026-07-11 移交 589411a runbook（Phase 1/2A/2B 完成，2C-alt 待執行）⭐（換手看這裡）
+> 定稿 runbook：`RUNBOOK_589411a_transfer_20260711.md`（Fable 產、CC 執行，勾選+證據都在裡面）。決策：整個給中油（含域名）。
+> **589411a 帳號座標**：Cloudflare account `ca3e37fa2f5e10d85031d34cb3b988fd`（≠589411 的 `0b3e3ff0…`）；GitHub 個人帳號 `CPCTR`；Supabase CPCTR `bqgsgfnxdlmrhmeyxkfq`。CC 操作 589411a Cloudflare 走 **API token（存 Keychain `cf-589411a-token`）**，每個 wrangler 指令要 `export CLOUDFLARE_API_TOKEN=$(security find-generic-password -s cf-589411a-token -a "$USER" -w)` ＋ `export CLOUDFLARE_ACCOUNT_ID=ca3e37fa2f5e10d85031d34cb3b988fd`（只設 token 沒設 account 會掉回舊帳號→10000）。
+
+**✅ 已完成並驗證：**
+- **Phase 1** launchdock 8 張 `cpc_*`→`cpc_old_*`（封存；回退＝一鍵 RENAME 回）。
+- **Phase 2A** 兩 repo 鏡像到 GitHub `CPCTR/*`（remote `cpctr`，單向 589411→CPCTR）。HEAD 對齊。
+- **Phase 2B** 589411a 上：worker `new-cpc-worker.cpctr.workers.dev`＋`news-response-llm.cpctr.workers.dev`（讀 CPCTR、healthz/approval 200）；KV `TIERS`=`267d7599…`；secrets 全灌（經 Keychain `cf-589411a-*`）；Pages `news-response-cy7.pages.dev`(生稿頁)＋`new-cpc.pages.dev`(hub) 皆 200；workers.dev 子網域 `cpctr`。⏸ 戰情表 `apps/pr-approval` 源碼不在 repo，延後（併稿件收斂支線）。
+
+**⏳ 下一個具體動作（換手接這裡）＝ Phase 2C-alt「整個移交含域名」**（見 runbook 2C-alt 段）：
+1. **明天起手 2Ca-0（非破壞）**：CC 匯出 589411 的 new-cpc.com DNS 全記錄備份＋盤 Access policy；Joseph 確認 DNSSEC/zone lock/註冊人 email，並建一把 **589411a Zone:Edit+DNS:Edit token**（現有 token 只有 Account 範圍、動不了 DNS）。
+2. 2Ca-1 589411a 建 zone 重建 DNS → 2Ca-2 接原生自訂網域 → **2Ca-3 registrar 帳號間 move（🔴cutover，兩帳號確認、關DNSSEC、30天鎖）** → 2Ca-4 Access 重建 → 2Ca-5 LINE/OAuth 校正 → 2Ca-6 驗證。
+3. 不斷站：589411 worker/Pages 全程留當 fallback。
+- ⏳ **DROP 排程**：移交完＋穩定 7 天後（≥移交日+7）經 Joseph 授權才 `DROP cpc_old_*`（Phase 3）。
+- 🔑 **待辦**：移交全部結束後 Roll 掉對話中出現過的 CF API token。
+- 🌿 **支線**：稿件系統收斂（以簽核為單一入口，MVP 匿名）——設計文件 `new-cpc/docs/CONSOLIDATION_single_approval_source_20260711.md`；先設計、暫緩實作，移交穩了再做。
 **整體狀態：** 🟢 桃園已上線 Cloudflare + 🟢 多單位導入框架 + 🟢 稿件庫跨裝置同步(LINE 登入實測通+已部署正式站) + 🟢 後端搬遷至中油自有 Supabase(DB+LINE+Worker 完成並上線／僅 Google 選配待接／舊 launchdock DB 待正式確認後刪)
 
 > 2026-07-10 收尾：`feat/draft-library` 已 push；`docs/` 已 `wrangler pages deploy` 到 news-response(正式站 response.new-cpc.com + news-response.pages.dev)，pages.dev 實測帶 CPCTR key+☁同步。剩：Google provider(選配)、待正式站確認無誤後刪 launchdock 舊 cpc_*(破壞性,先問)。
