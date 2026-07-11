@@ -31,15 +31,12 @@
 
 ### 2B. Cloudflare 段
 
-- [ ] **2B-1** Joseph 互動登入：`npx wrangler login`（瀏覽器選 **589411a**，注意別選到主帳號）。`wrangler whoami` 確認 email 後才繼續。
-- [ ] **2B-2** CC 在 589411a 建空 KV namespace `TIERS`（線上實測舊 KV 為 0 筆，無資料要搬），把新 namespace id 寫進 `new-cpc/worker/wrangler.toml`（建議用環境區分，勿覆蓋 589411 的 id）。
-- [ ] **2B-3** 部署兩支 worker 到 589411a：`npx wrangler deploy`（vars 已在 wrangler.toml，隨部署帶上）。
-- [ ] **2B-4** Secrets 逐一重設（值 Joseph 提供，不進 git、不進雲端對話）：
-  - `news-response-llm`：`GITHUB_TOKEN`、`OPENROUTER_API_KEY`、`ANTHROPIC_API_KEY`、`APP_KEY`
-  - `new-cpc-worker`：`ANTHROPIC_API_KEY`、`LINE_CHANNEL_SECRET`、`LINE_CHANNEL_TOKEN`、`SUPABASE_SERVICE_KEY`（=CPCTR secret）＋選填 `OPENROUTER_API_KEY`、`OLLAMA_API_KEY`、`APP_KEY`
-  - ⚠ `SUPABASE_URL` 是明文 var 不是 secret，`secret put` 會撞名（10053）；它走 wrangler.toml。
-- [ ] **2B-5** Pages（hub ＋ apps）在 589411a 重建，接 2A 的鏡像 repo。
-- [ ] **2B-6** 驗證（用 `*.workers.dev` / `*.pages.dev` 原生網址，先不動 DNS）：`/healthz` 200、`/approval/templates` 200、LIFF 流程冒煙測試。
+- [x] **2B-1** 改走 **API Token**（非 OAuth——Safari 預設登 589411、consent 會授權錯帳號）。589411a Cloudflare account id `ca3e37fa2f5e10d85031d34cb3b988fd`。token 存 Keychain `cf-589411a-token`。⚠ 坑：只設 token、沒設 `CLOUDFLARE_ACCOUNT_ID` 時 wrangler 會掉回舊帳號→10000；**每個指令都要 export `CLOUDFLARE_API_TOKEN`＋`CLOUDFLARE_ACCOUNT_ID=ca3e37fa…`**。token 權限：Account 範圍的 Account Settings:Read / Workers Scripts / Workers KV Storage / Cloudflare Pages / Workers AI（Edit）。
+- [x] **2B-2** 589411a KV `TIERS` 建好 id `267d75996ffe4577a1839364dd6f2186`（`new-cpc/worker/wrangler.toml` 已更新、註解保留舊 589411 id）。另註冊 workers.dev 子網域 **`cpctr`**（API PUT）。
+- [x] **2B-3** 兩支 worker 部署到 589411a：`new-cpc-worker.cpctr.workers.dev`(c8b81c9a)、`news-response-llm.cpctr.workers.dev`(635737da)。⚠ `news-response-llm` 的 route（zone new-cpc.com 在 589411、跨帳號）已註解、改開 `workers_dev=true` 用原生網址驗證（跨帳號路由留 2C）。
+- [x] **2B-4** Secrets 經 Keychain（`cf-589411a-*`，值不進對話）灌入：`new-cpc-worker`=SUPABASE_SERVICE_KEY/LINE_CHANNEL_TOKEN/LINE_CHANNEL_SECRET/ANTHROPIC_API_KEY/OPENROUTER_API_KEY；`news-response-llm`=GITHUB_TOKEN/OPENROUTER_API_KEY/ANTHROPIC_API_KEY。`secret list` 驗證名單到齊。
+- [ ] **2B-5** Pages（hub ＋ apps ＋ news-response docs 稿件庫）在 589411a 重建，接 2A 的鏡像 repo。⚠ new-cpc hub 是 Astro build、`apps/pr-approval` 等前端源碼不在 repo（部署版才有）——需決定重建 or 先只上 news-response docs。
+- [x] **2B-6**（worker 部分）驗證通過：new-cpc-worker `/healthz` 200、`/approval/templates`＋`/board` 200 回 CPCTR 資料；news-response-llm `/api/generate` 405(存活)。LIFF/LINE 冒煙測試待 2C 網域接上再做。
 
 ### 2C. DNS 段（最後、可回退）
 

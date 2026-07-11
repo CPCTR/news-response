@@ -2,12 +2,12 @@ name = "news-response-llm"
 main = "worker.js"
 compatibility_date = "2025-01-01"
 
-# 同網域 API route：讓頁面以同源 /api 呼叫，一道 Cloudflare Access 即可同時保護頁面與 API
-routes = [
-  { pattern = "response.new-cpc.com/api/*", zone_name = "new-cpc.com" }
-]
-# workers.dev 已關閉：只能從 response.new-cpc.com/api/*（Cloudflare Access 後）進入
-workers_dev = false
+# ⚠ 2026-07-11 移交 589411a：route 綁的 zone new-cpc.com 在 589411(跨帳號)，589411a 建不了此 route，
+#   故 2B 部署先註解 route + 開 workers_dev 用原生網址驗證；跨帳號路由於 2C 用 589411 DNS CNAME 另接。
+# routes = [
+#   { pattern = "response.new-cpc.com/api/*", zone_name = "new-cpc.com" }
+# ]
+workers_dev = true
 
 # 非機密設定可放這裡（機密請用 `wrangler secret put`）
 [vars]
