@@ -12,8 +12,8 @@
 
 ## Phase 0：驗收前置（Joseph，分鐘級，先做）
 
-- [ ] **P0-1** Google 真人登入實測：稿件庫「以 Google 登入」點一次。前置已備（redirect URI 含 CPCTR callback、consent screen 已 Publish）。失敗 → 回報 CC 查 CPCTR auth 設定，**未通過前不進 Phase 2**。
-- [ ] **P0-2** Cloudflare Access 員工白名單：Joseph 在 589411 Zero Trust dashboard 設定 `response.new-cpc.com` 的 Gmail 名單（CC 不代動存取控制）。
+- [x] **P0-1** Google 真人登入實測通過（Joseph 回報，2026-07-11）→ Phase 2 放行條件成立。
+- [ ] **P0-2** Cloudflare Access 員工白名單：**等待中**——Joseph 已聯繫，待對方提供 Gmail 名單（2026-07-11）。不擋 Phase 2A/2B，僅擋正式對外開放。
 
 ## Phase 1：舊表封存（CC 或 Fable via MCP，隨時可做，非破壞）
 
@@ -25,9 +25,9 @@
 
 ### 2A. Repo 段（先於一切 Cloudflare 操作）
 
-- [ ] **2A-1** Joseph 登入 589411a 的 GitHub，建空 repo：`news-response`、`new-cpc`（private）。
-- [ ] **2A-2** CC 從本機推鏡像：`git push --mirror`（或 main＋tags）到 589411a repo。**方向鎖死：589411 → 589411a 單向**；589411a 側不直接開發。
-- [ ] **2A-3** 驗證：兩個鏡像 repo 的 HEAD SHA 與本機一致。
+- [x] **2A-1** 空 repo 由 Joseph 手動建於 GitHub **個人帳號 `CPCTR`**（非 org）：`https://github.com/CPCTR/news-response`、`https://github.com/CPCTR/new-cpc`（private）。⚠ 帳號地圖更新：589411a 的 GitHub 身份＝個人帳號 `CPCTR`。
+- [x] **2A-2** 完成（2026-07-11）：本機加 remote `cpctr`，`git push cpctr --all && --tags` 推兩 repo。**改用 `--all`＋`--tags` 而非 `--mirror`**（--mirror 會連 refs/remotes 追蹤 ref 一起推、弄髒目標）。方向鎖死 589411→CPCTR 單向。⚠ 認證坑：一開始 403「denied to 589411」——CC 憑證是 GitHub 使用者 `589411`，需 Joseph 在 `CPCTR` 個人帳號把 `589411` 加為兩 repo 的 collaborator(=Write)且 `589411` 接受邀請後才可推（個人帳號 repo 的 collaborator 一律 Write，無角色下拉）。
+- [x] **2A-3** HEAD 驗證通過（2026-07-11）：`new-cpc` main `15cf6f9b`＝遠端；`news-response` `feat/draft-library` `5958752`＋`master` `cfdad57` 皆＝遠端。
 
 ### 2B. Cloudflare 段
 
