@@ -520,8 +520,13 @@ async function callLLM(system,user){
   if((cfg.backend||'worker')==='worker'){
     const wurl=cfg.worker||DEFAULT_WORKER;
     const h={'content-type':'application/json'}; if(cfg.ak)h['x-app-key']=cfg.ak;
+    // 登入時帶上 Supabase access_token，讓 worker 身份閘（LINE 白名單 / 授權 Gmail）辨識放行
+    if (typeof SESSION!=='undefined' && SESSION && SESSION.access_token) h['Authorization']='Bearer '+SESSION.access_token;
     const r=await fetch(wurl,{method:'POST',headers:h,body:JSON.stringify({system,user,max_tokens:2800})});
-    const j=await r.json(); if(!r.ok||j.error)throw new Error('Worker: '+(j.error||r.status)+(j.detail?' / '+j.detail:'')); return j.text;
+    const j=await r.json();
+    // 401 = 身份閘擋下（未登入 / session 失效 / 不在白名單）→ 丟出可辨識的友善訊息
+    if(r.status===401){ throw new Error('請先以 LINE 或授權的 Gmail 登入才能生稿'); }
+    if(!r.ok||j.error)throw new Error('Worker: '+(j.error||r.status)+(j.detail?' / '+j.detail:'')); return j.text;
   }
   if(!cfg.k){openSettings();throw new Error('請先設定 API Key');}
   const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':cfg.k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:cfg.md||'claude-sonnet-4-6',max_tokens:2800,system,messages:[{role:'user',content:user}]})});

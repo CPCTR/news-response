@@ -16,9 +16,15 @@ GH_MODEL = "openai/gpt-5-chat"                            # GitHub Models（免�
 OPENROUTER_MODEL = "google/gemini-3-flash-preview"        # 試用 Gemini 3 Flash Preview（OpenRouter）
 ANTHROPIC_MODEL = "claude-sonnet-4-6"                     # Anthropic 備援模型
 
+# Supabase 身份閘（非機密，可明文）：只放行 LINE 白名單帳號或授權 Gmail，防外部白嫖燒 LLM 費用
+SUPABASE_URL = "https://bqgsgfnxdlmrhmeyxkfq.supabase.co"                          # CPCTR 專案 URL
+SUPABASE_ANON_KEY = "sb_publishable_445I76rNDvF14r68vWpWSA_IjaXM-nV"               # CPCTR publishable key（驗證 /auth/v1/user 用）
+GMAIL_ALLOWLIST = "117617hsuan@gmail.com,s1211391478@gmail.com,richard7251benson@gmail.com,onlycjw1421@gmail.com"  # 授權 Gmail（逗號分隔，比對前 lowercase+trim）
+
 # 機密（不要寫在這裡，用指令設定）：
 #   wrangler secret put GITHUB_TOKEN        # GitHub PAT，需 models:read（主路）
 #   wrangler secret put OPENROUTER_API_KEY  # OpenRouter 備援，可省略
 #   wrangler secret put ANTHROPIC_API_KEY   # Anthropic 備援，可省略
 #   wrangler secret put APP_KEY             # 防白嫖共享密鑰；正式環境務必設，前端「App Key」需填同值
+#   wrangler secret put SUPABASE_SERVICE_KEY # Supabase service_role 金鑰；身份閘查 cpc_identities 表用（機密，勿明文）
 # 上線前並把上方 ALLOWED_ORIGIN 改成正式頁面網域（鎖來源）。

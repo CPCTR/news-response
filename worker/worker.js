@@ -17,8 +17,12 @@
  *   GITHUB_TOKEN        — GitHub PAT，需 models:read 權限（主路）
  *   OPENROUTER_API_KEY  — OpenRouter 金鑰（備援，可省略）
  *   ANTHROPIC_API_KEY   — Anthropic 金鑰（備援，可省略）
+ *   SUPABASE_SERVICE_KEY— Supabase service_role 金鑰（身份閘查 cpc_identities 用；務必 secret put，勿明文）
  * 一般變數（可寫在 wrangler.toml [vars]）：
  *   ALLOWED_ORIGIN      — 你的頁面網域（可逗號分隔多個）
+ *   SUPABASE_URL        — Supabase 專案 URL（身份閘驗證用）
+ *   SUPABASE_ANON_KEY   — Supabase publishable/anon key（驗證 /auth/v1/user 用）
+ *   GMAIL_ALLOWLIST     — 授權 Gmail 白名單（逗號分隔）
  *   GH_MODEL            — GitHub Models 模型 id，例如 openai/gpt-5-chat
  *   OPENROUTER_MODEL    — OpenRouter 模型 id，例如 openai/gpt-4o-mini
  *   ANTHROPIC_MODEL     — Anthropic 模型 id，例如 claude-sonnet-4-6
@@ -38,7 +42,7 @@ export default {
     const cors = {
       "Access-Control-Allow-Origin": corsOrigin,
       "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "content-type, x-app-key",
+      "Access-Control-Allow-Headers": "content-type, x-app-key, authorization",
       "Access-Control-Max-Age": "86400",
     };
 
@@ -53,6 +57,11 @@ export default {
     // 正式環境務必 `wrangler secret put APP_KEY`；本機不設則開放，方便測試。
     if (env.APP_KEY && request.headers.get("x-app-key") !== env.APP_KEY)
       return json({ error: "unauthorized" }, 401, cors);
+
+    // 防白嫖③：Supabase 身份閘。只有「LINE 白名單帳號」或「授權 Gmail」能生稿，
+    // 其他人一律擋在呼叫 LLM 之前（fail-closed，驗證失敗絕不燒 LLM 費用）。
+    const gate = await authGate(request, env);
+    if (!gate.ok) return json({ error: gate.error }, gate.status, cors);
 
     let body;
     try {
@@ -164,6 +173,108 @@ async function callAnthropic(env, system, user, maxTokens) {
   const j = await res.json();
   const text = (j.content || []).map((c) => c.text || "").join("");
   return { ok: true, payload: { text, provider: "anthropic", model } };
+}
+
+/**
+ * Supabase 身份閘：驗證呼叫者是否為授權使用者。
+ * 回傳 { ok:true }（放行）或 { ok:false, status, error }（擋下，附 HTTP 狀態碼與錯誤碼）。
+ *
+ * 放行條件（擇一）：
+ *   A) Google 登入且 email ∈ GMAIL_ALLOWLIST（逗號分隔，比對前 lowercase+trim）。
+ *   B) LINE 登入且該 line_uid 存在於 cpc_identities 表。
+ * 任何一步失敗（無 token / session 無效 / 不在白名單）都不放行，且不會呼叫 LLM。
+ *
+ * 容錯：Supabase 回傳的 user JSON 結構未必固定，取欄位一律用 ?. 與 fallback 防呆。
+ */
+async function authGate(request, env) {
+  // 1) 取 Bearer token；沒有就直接擋（fail-closed）
+  const authHeader = request.headers.get("Authorization") || request.headers.get("authorization") || "";
+  const m = authHeader.match(/^Bearer\s+(.+)$/i);
+  const token = m ? m[1].trim() : "";
+  if (!token) return { ok: false, status: 401, error: "login_required" };
+
+  // 設定不齊全時保守擋下（避免誤放行）
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
+    return { ok: false, status: 401, error: "invalid_session" };
+  }
+
+  // 2) 用 token 換 user，驗證 session 是否有效
+  let user;
+  try {
+    const res = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        apikey: env.SUPABASE_ANON_KEY,
+      },
+    });
+    if (res.status !== 200) return { ok: false, status: 401, error: "invalid_session" };
+    user = await res.json();
+  } catch {
+    return { ok: false, status: 401, error: "invalid_session" };
+  }
+  if (!user || typeof user !== "object") {
+    return { ok: false, status: 401, error: "invalid_session" };
+  }
+
+  const identities = Array.isArray(user.identities) ? user.identities : [];
+  const providers = new Set();
+  // app_metadata.provider（主要）與 app_metadata.providers[]（多重綁定時）
+  if (user.app_metadata?.provider) providers.add(String(user.app_metadata.provider).toLowerCase());
+  for (const p of (user.app_metadata?.providers || [])) providers.add(String(p).toLowerCase());
+  // 逐筆 identity 的 provider 也納入判斷
+  for (const idn of identities) {
+    if (idn?.provider) providers.add(String(idn.provider).toLowerCase());
+  }
+
+  // 3a) Google：email 在允許清單即放行
+  const hasGoogle = providers.has("google");
+  if (hasGoogle) {
+    const email = (user.email || "").toString().trim().toLowerCase();
+    const allow = (env.GMAIL_ALLOWLIST || "")
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
+    if (email && allow.includes(email)) return { ok: true };
+    // Google 但不在白名單 → 繼續往下（理論上不會又是 LINE，最終落到 not_whitelisted）
+  }
+
+  // 3b) LINE：custom OIDC，identities[].provider 可能是 'line'
+  const hasLine =
+    providers.has("line") ||
+    identities.some((idn) => /line/i.test(String(idn?.provider || "")));
+  if (hasLine) {
+    // 取 line_uid：優先該筆 identity 的 id，退而求其次 user_metadata 的 sub / provider_id
+    let lineUid = "";
+    const lineIdn = identities.find((idn) => /line/i.test(String(idn?.provider || "")));
+    lineUid =
+      (lineIdn?.id || "").toString().trim() ||
+      (user.user_metadata?.sub || "").toString().trim() ||
+      (user.user_metadata?.provider_id || "").toString().trim();
+    // 合理性檢查：LINE userId 應為 U + 32 hex（格式不符仍嘗試查，避免因格式判斷失誤而誤擋）
+    if (lineUid) {
+      try {
+        const uidEnc = encodeURIComponent(lineUid);
+        const res = await fetch(
+          `${env.SUPABASE_URL}/rest/v1/cpc_identities?line_uid=eq.${uidEnc}&select=line_uid`,
+          {
+            headers: {
+              apikey: env.SUPABASE_SERVICE_KEY,
+              Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+            },
+          }
+        );
+        if (res.ok) {
+          const rows = await res.json();
+          if (Array.isArray(rows) && rows.length >= 1) return { ok: true };
+        }
+      } catch {
+        // 查詢失敗保守擋下
+      }
+    }
+  }
+
+  // 4) 都不符 → 擋下
+  return { ok: false, status: 401, error: "not_whitelisted" };
 }
 
 function json(obj, status, cors) {
