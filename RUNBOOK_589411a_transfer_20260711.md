@@ -98,8 +98,8 @@
 > **不與交付混庫**：warroom 用**獨立 worker**（不塞 new-cpc-worker）；資料先用 KV，日後 B軌上雲再遷 Supabase。
 
 - [x] **4-1 token 自證通過**（2026-07-12）：`wrangler whoami`→589411a account `ca3e37fa2f5e10d85031d34cb3b988fd` ✅；`gh auth status`→登入 `589411`(scopes repo/workflow)、`gh repo view CPCTR/new-cpc`→PRIVATE 可見可推 ✅；Supabase CPCTR 非 MCP 可達(已知)，warroom 先用 KV 不需它 ✅。
-- [ ] **4-2 warroom ingest worker**：589411a 新 worker `warroom-cpc`，端點 `POST /warroom/ingest`(收 warroom.json，Bearer)、`POST /warroom/ingest-image`(§8.5d，收圖+LLM vision 抽取)、`GET /warroom/`(LINE 登入+KV 白名單→頁面)。secrets 走 Keychain，不進對話。
-- [ ] **4-3 本機推送**：`news-monitor/push_warroom.py` 把 warroom.json POST 到 4-2 端點（Bearer token，失敗本地排隊重試）。原始高解截圖留本機/R2，只推摘要+縮圖。
+- [x] **4-2 warroom worker 部署+驗證**（2026-07-12）：589411a `warroom-cpc.cpctr.workers.dev`（v57c2e531）。程式 `news-monitor/warroom-worker/`。KV `WARROOM`=`d80526bbb4cc4b04bb9ed02ec320b99e`。secrets(Keychain)：INGEST_TOKEN(新生 `cf-589411a-WARROOM_INGEST_TOKEN`)/ANTHROPIC/OPENROUTER。驗證：`/healthz` 200；ingest 無token→**401**、帶token→**200**；`GET /warroom/` 未登入/假token→登入頁；KV 三 key 原始API確認寫入(wrangler kv get 有讀取延遲、非 bug)。⚠ 三端點齊(ingest/ingest-image vision/view)。
+- [x] **4-3 push_warroom.py 驗證**（2026-07-12）：推送成功、雲端收到真實資料(tiles=126)、失敗排隊`.warroom_push_queue/`補送清空。⚠ 坑：urllib 預設 UA 被 Cloudflare **error 1010** 擋 → 已加 `User-Agent: warroom-push/1.0`。token 從 env `WARROOM_INGEST_TOKEN`、URL `WARROOM_WORKER_URL`；payload 只含 json+html+generated_at，無憑證/原圖。
 - [ ] **4-4 中油可視**：LIFF/LINE 登入 → 白名單內帳號看得到 warroom；白名單外看不到。雙時間戳(generated_at/received_at)+斷流紅橫幅上線。
 - [ ] **4-5 驗收**：手機(行動網路)LINE 登入看到戰情室；未帶 token 的 POST 被拒；斷流測試出現紅橫幅；grep 推送 payload 不含 FB 憑證/cookies。
 - [ ] **4-6 域名接入**：2Ca 完成後，warroom 綁自訂網域（如 `warroom.new-cpc.com`）；未完成前用 `warroom-cpc.cpctr.workers.dev` 原生網址先給中油看。
