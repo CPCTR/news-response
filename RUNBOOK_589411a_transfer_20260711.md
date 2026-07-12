@@ -57,7 +57,11 @@
 > **不斷站原則**：全程保留 589411 的 worker/Pages 當 fallback；589411a 已用原生網址驗證可用。破壞性步驟（改 DNSSEC、發起 move、cutover）動前貼指令+回退、Joseph 確認才動。
 
 ### 2Ca-0 前置盤點與備份（非破壞，先做）〔CC 用 589411 access ＋ Joseph〕
-- [ ] **2Ca-0a** 用 589411（wrangler OAuth / dashboard）**匯出 new-cpc.com 全部 DNS 記錄**（不只 response，含 MX/TXT/其他子網域），存檔備份（scratchpad + 貼進本文件附錄）。
+- [x] **2Ca-0a 完成**（2026-07-12，589411 `Zone:DNS:Read` token `cf-589411-dns-read`）：new-cpc.com zone `89eae753ae322ab37e21395ddaf77586`，**共 3 筆 DNS**，全備份如下（zone 移到 589411a 後照此重建）：
+  - `CNAME new-cpc.com → new-cpc.github.io`（灰雲/dns-only，ttl auto）
+  - `CNAME www.new-cpc.com → new-cpc.github.io`（灰雲/dns-only）
+  - `CNAME response.new-cpc.com → news-response.pages.dev`（🟠proxied）← **搬後改指 589411a 的 `news-response-cy7.pages.dev`**
+  - 註：apex/www 指 GitHub Pages（與 DNS 帳號無關，照抄）；只有 `response` 要重新指向 589411a Pages。無 MX/TXT/其他記錄。
 - [ ] **2Ca-0b** 盤點 589411 Zero Trust **Access policy**（response.new-cpc.com 的規則），記下以便在 589411a 重建。
 - [ ] **2Ca-0c** 確認轉移前置：註冊 >10 天 ✅（到期 2027-06）／registry 無 pendingDelete·redemption·pendingTransfer／**註冊人 email 已驗證**／無 pending Change of Registrant／**DNSSEC 狀態**（要關）／zone 是否上鎖。
 - [ ] **2Ca-0d** 備一把 **589411a 含 `Zone:Edit`＋`DNS:Edit`** 的 API token（現有 token 只有 Account 範圍，動不了 DNS）〔Joseph 建，存 Keychain `cf-589411a-zone-token`〕。
