@@ -1,24 +1,27 @@
 # STATUS — news-response
 
 > 單一真相。每次離開前更新（全域憲法收尾鐵律）。
-**最後更新：** 2026-07-11
+**最後更新：** 2026-07-12
 
-## 2026-07-11 移交 589411a runbook（Phase 1/2A/2B 完成，2C-alt 待執行）⭐（換手看這裡）
-> 定稿 runbook：`RUNBOOK_589411a_transfer_20260711.md`（Fable 產、CC 執行，勾選+證據都在裡面）。決策：整個給中油（含域名）。
-> **589411a 帳號座標**：Cloudflare account `ca3e37fa2f5e10d85031d34cb3b988fd`（≠589411 的 `0b3e3ff0…`）；GitHub 個人帳號 `CPCTR`；Supabase CPCTR `bqgsgfnxdlmrhmeyxkfq`。CC 操作 589411a Cloudflare 走 **API token（存 Keychain `cf-589411a-token`）**，每個 wrangler 指令要 `export CLOUDFLARE_API_TOKEN=$(security find-generic-password -s cf-589411a-token -a "$USER" -w)` ＋ `export CLOUDFLARE_ACCOUNT_ID=ca3e37fa2f5e10d85031d34cb3b988fd`（只設 token 沒設 account 會掉回舊帳號→10000）。
+## 2026-07-12 域名整個搬到中油 + 生稿頁存取閘 + 戰情室上雲 ⭐（換手看這裡）
+> runbook：`RUNBOOK_589411a_transfer_20260711.md`（每步勾選+證據）。踩過的坑全記在 `~/github/memory/memory/solutions.md`（Cloudflare 帳號間移轉/wrangler帳號/Access/LIFF/KV 那幾條）。
+> **589411a 座標**：Cloudflare account `ca3e37fa2f5e10d85031d34cb3b988fd`；GitHub 個人帳號 `CPCTR`；Supabase CPCTR `bqgsgfnxdlmrhmeyxkfq`。wrangler 每個指令要 `export CLOUDFLARE_API_TOKEN=$(security find-generic-password -s cf-589411a-token -a "$USER" -w)` ＋ `export CLOUDFLARE_ACCOUNT_ID=ca3e37fa2f5e10d85031d34cb3b988fd`（只設 token 沒設 account→掉回舊帳號 10000）。KV 寫入用 raw API PUT（`wrangler kv key put` 會靜默失敗）。
 
-**✅ 已完成並驗證：**
-- **Phase 1** launchdock 8 張 `cpc_*`→`cpc_old_*`（封存；回退＝一鍵 RENAME 回）。
-- **Phase 2A** 兩 repo 鏡像到 GitHub `CPCTR/*`（remote `cpctr`，單向 589411→CPCTR）。HEAD 對齊。
-- **Phase 2B** 589411a 上：worker `new-cpc-worker.cpctr.workers.dev`＋`news-response-llm.cpctr.workers.dev`（讀 CPCTR、healthz/approval 200）；KV `TIERS`=`267d7599…`；secrets 全灌（經 Keychain `cf-589411a-*`）；Pages `news-response-cy7.pages.dev`(生稿頁)＋`new-cpc.pages.dev`(hub) 皆 200；workers.dev 子網域 `cpctr`。⏸ 戰情表 `apps/pr-approval` 源碼不在 repo，延後（併稿件收斂支線）。
+**✅ 今天完成並驗證：**
+- **域名 new-cpc.com 整個搬到 589411a**（registrar 帳號間 move，零斷線）：NS→venus/pete；`response.new-cpc.com`→589411a Pages（`news-response-cy7`）、`/api/*`→`news-response-llm` worker、apex/www→GitHub Pages、`/warroom/*`→warroom worker。30 天內不能再 move。
+- **生稿頁存取閘**（`response.new-cpc.com` /api）：worker 加 Supabase 身份驗證——**LINE 查 `cpc_identities` OR Gmail 白名單(4人)** 才能生稿，其他 401 不燒 LLM。擋人路徑已驗證；放行路徑待 Joseph 測。程式 `news-response/worker/worker.js` authGate + `web/index.html` 帶 token。
+- **戰情室上雲**：獨立 worker `warroom-cpc`（`warroom.new-cpc.com` + `response.new-cpc.com/warroom/`）；LINE LIFF 登入（專屬 LIFF `2010579062-nAekW0po`）+ KV 白名單（彥堂/hang/怡瑄，admin 預設彥堂）；資料端點 `warroom.json`；心跳推送每 15 分（`com.cpc.warroom.push`）+ lane render 後 push。手機 LINE 可看。程式 `news-monitor/warroom-worker/` + `push_warroom.py` + `warroom_schedule.py`。
 
-**⏳ 下一個具體動作（換手接這裡）＝ Phase 2C-alt「整個移交含域名」**（見 runbook 2C-alt 段）：
-1. **明天起手 2Ca-0（非破壞）**：CC 匯出 589411 的 new-cpc.com DNS 全記錄備份＋盤 Access policy；Joseph 確認 DNSSEC/zone lock/註冊人 email，並建一把 **589411a Zone:Edit+DNS:Edit token**（現有 token 只有 Account 範圍、動不了 DNS）。
-2. 2Ca-1 589411a 建 zone 重建 DNS → 2Ca-2 接原生自訂網域 → **2Ca-3 registrar 帳號間 move（🔴cutover，兩帳號確認、關DNSSEC、30天鎖）** → 2Ca-4 Access 重建 → 2Ca-5 LINE/OAuth 校正 → 2Ca-6 驗證。
-3. 不斷站：589411 worker/Pages 全程留當 fallback。
-- ⏳ **DROP 排程**：移交完＋穩定 7 天後（≥移交日+7）經 Joseph 授權才 `DROP cpc_old_*`（Phase 3）。
-- 🔑 **待辦**：移交全部結束後 Roll 掉對話中出現過的 CF API token。
-- 🌿 **支線**：稿件系統收斂（以簽核為單一入口，MVP 匿名）——設計文件 `new-cpc/docs/CONSOLIDATION_single_approval_source_20260711.md`；先設計、暫緩實作，移交穩了再做。
+**⏳ 明天的下一個具體動作（換手接這裡）：**
+1. **測生稿頁放行路徑**：`response.new-cpc.com` 用授權 Gmail / LINE(彥堂在cpc_identities) 登入 → 能生稿？（LINE 那條的 line_uid 欄位是風險點，被擋成 not_whitelisted 就 dump user JSON 對欄位）。
+2. **warroom 加 Gmail 登入（桌機）**：warroom 只吃 LINE id_token（手機導向），桌機「用 LINE 開啟」沒反應。**暫時解**：已加 demo 金鑰通道 `https://warroom.new-cpc.com/warroom/?key=cpc-warroom-3a9da6944ee4`（env secret `WARROOM_DEMO_KEY`，桌機 demo 用；demo 後 roll 掉）。**正式**：比照生稿頁加 Supabase Google 登入 + Gmail 白名單（warroom 頁面加 Google 登入鈕 → 帶 Supabase token → worker 驗 /auth/v1/user + GMAIL_ALLOWLIST）。
+3. **`/bindlink` 綁中油 LINE 人**：綁進 `cpc_identities`（同時給生稿頁+簽核+可延伸 warroom 白名單）。warroom 白名單目前是 KV `warroom:allow:<uid>`，加人用 raw API PUT 或 `/warroom-allow`（需 #4）。
+4. **LINE webhook 切 589411a**：Messaging 頻道 `2010578618` webhook → `https://new-cpc-worker.cpctr.workers.dev/line/webhook`，`/warroom-allow`、`/bindlink`、`/delete` 等 admin 指令才在新帳號生效（admin 已預設彥堂）。
+5. **Rich Menu 加「戰情室」按鈕**（重繪 3 鈕圖 + LINE API，設計工）。
+6. warroom 雲端「釘選」`/api/pins` 端點沒有（點釘選無作用，不影響看）；要補再說。
+- ⏳ **DROP 排程**：移交穩定 7 天後（≥2026-07-19）經 Joseph 授權才 `DROP cpc_old_*`（launchdock）。
+- 🔑 **待辦**：Roll 掉對話中出現過的 CF API token（`cfut_…`）。
+- 🌿 **支線**：稿件系統收斂（以簽核為單一入口）——設計文件 `new-cpc/docs/CONSOLIDATION_single_approval_source_20260711.md`；暫緩實作。
 **整體狀態：** 🟢 桃園已上線 Cloudflare + 🟢 多單位導入框架 + 🟢 稿件庫跨裝置同步(LINE 登入實測通+已部署正式站) + 🟢 後端搬遷至中油自有 Supabase(DB+LINE+Worker 完成並上線／僅 Google 選配待接／舊 launchdock DB 待正式確認後刪)
 
 > 2026-07-10 收尾：`feat/draft-library` 已 push；`docs/` 已 `wrangler pages deploy` 到 news-response(正式站 response.new-cpc.com + news-response.pages.dev)，pages.dev 實測帶 CPCTR key+☁同步。剩：Google provider(選配)、待正式站確認無誤後刪 launchdock 舊 cpc_*(破壞性,先問)。
