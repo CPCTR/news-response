@@ -63,28 +63,25 @@
   - `CNAME response.new-cpc.com → news-response.pages.dev`（🟠proxied）← **搬後改指 589411a 的 `news-response-cy7.pages.dev`**
   - 註：apex/www 指 GitHub Pages（與 DNS 帳號無關，照抄）；只有 `response` 要重新指向 589411a Pages。無 MX/TXT/其他記錄。
 - [ ] **2Ca-0b** 盤點 589411 Zero Trust **Access policy**（response.new-cpc.com 的規則），記下以便在 589411a 重建。
-- [ ] **2Ca-0c** 確認轉移前置：註冊 >10 天 ✅（到期 2027-06）／registry 無 pendingDelete·redemption·pendingTransfer／**註冊人 email 已驗證**／無 pending Change of Registrant／**DNSSEC 狀態**（要關）／zone 是否上鎖。
-- [ ] **2Ca-0d** 備一把 **589411a 含 `Zone:Edit`＋`DNS:Edit`** 的 API token（現有 token 只有 Account 範圍，動不了 DNS）〔Joseph 建，存 Keychain `cf-589411a-zone-token`〕。
+- [x] **2Ca-0c 完成**（2026-07-12）：註冊約 2026-06-22（1yr，到期 2027-06-22）→ >10 天 ✅；Status Active（無壞 registry 狀態）✅；DNSSEC **Disabled** ✅（免關）；註冊人 email `589411@gmail.com` 已驗證 ✅。⚠ 「60 天鎖」是**換 registrar** 的 ICANN 鎖，**不擋帳號間 move**（官方前提是 >10 天；已由實際發起成功證實）。
+- [~] **2Ca-0d** 不需要：response 用 Pages custom domain（Pages:Edit token 即可）、/api route 後來用 Joseph 加的 Workers Routes:Edit——都沒動用到獨立 Zone:Edit token。
 
-### 2Ca-1 在 589411a 建 zone + 重建 DNS（非破壞；zone 未 active 前不影響 live）
-- [ ] **2Ca-1a** 589411a 把 **new-cpc.com 加成 site（Free 方案）**。⚠ 設定不會跟著 registrar move 搬 → **DNS 要在此手動重建**。
-- [ ] **2Ca-1b** 依 2Ca-0a 備份，在 589411a **重建所有 DNS 記錄**（逐筆對齊；別漏非本站的記錄）。
-- [ ] **2Ca-1c** 驗證：`dig @<589411a NS> new-cpc.com` 各記錄與備份一致（此時 NS 尚未生效，用指定 NS 查）。
+### 2Ca-1 在 589411a 建 zone + 重建 DNS ✅
+- [x] **2Ca-1a/1b 完成**（2026-07-12）：589411a 加 new-cpc.com（Free），自動掃入 8 筆（4A+4AAAA→GitHub Pages IP＋www CNAME）。⚠ **proxied 的 `response` 掃不到**（外部掃描看不到橘雲真實目標）→ Joseph 手動補 `CNAME response → news-response-cy7.pages.dev`(proxied)，共 **10 筆**。zone 進 pending（等 NS）。
+- [x] **2Ca-1c** 驗證：move 後 `dig NS new-cpc.com`＝venus/pete（589411a），response 解析到 news-response-cy7.pages.dev ✅。
 
-### 2Ca-2 接原生自訂網域到 589411a Pages/Worker（同帳號，native、免費 SSL）
-- [ ] **2Ca-2a** `response.new-cpc.com` → **news-response Pages** custom domain（`wrangler pages ... ` 或 dashboard）。
-- [ ] **2Ca-2b** `/api/*` → **news-response-llm worker** route/custom domain（同帳號現在建得了；把先前 2B-3 註解掉的 route 用 589411a zone 版本恢復）。
-- [ ] **2Ca-2c**（選）apex `new-cpc.com` / `www` → **hub Pages** custom domain。
-- [ ] 註：zone 尚未 active 前這些不實際服務，但先設好，move 一生效即接上。
+### 2Ca-2 接原生自訂網域 ✅
+- [x] **2Ca-2a 完成**：`response.new-cpc.com` 加成 **news-response Pages custom domain**（API，Pages:Edit token，status initializing→move 後憑證自動發、TLS 通）。
+- [x] **2Ca-2b 完成**：`response.new-cpc.com/api/*` → **news-response-llm worker** route（API POST `/zones/{id}/workers/routes`，用 Joseph 加的 Workers Routes:Edit）。move 後 `/api/generate`→405（通）。
+- [ ] **2Ca-2c**（選，未做）apex/www 維持指 GitHub Pages（hub 現況）；要不要改指 589411a hub Pages 之後再說。
 
-### 2Ca-3 網域 registrar 帳號間移轉（🔴破壞性 cutover，先確認）〔Joseph 兩帳號確認〕
-- [ ] **2Ca-3a** 589411：**關 DNSSEC**、解 zone lock（若有）。
-- [ ] **2Ca-3b** 589411 發起 **inter-account move** 到 589411a（account `ca3e37fa2f5e10d85031d34cb3b988fd`）。
-- [ ] **2Ca-3c** 589411a **確認接受**。move 完成、NS 生效後 → 流量走 589411a zone、2Ca-2 自訂網域接上。
-- [ ] **2Ca-3d** ⚠ 轉移後 **30 天鎖定**、續費改由 589411a 負責；來源帳號該網域設定全失（已於 2Ca-0/1 備份重建）。
+### 2Ca-3 registrar 帳號間 move ✅（cutover 完成、零斷線）
+- [x] **2Ca-3 完成**（2026-07-12）：589411 → Manage Domain → Configuration → Start → 填目標 account `ca3e37fa…` 發起；589411a → Manage Domains → View Actions → **Accept**。傳播超快：NS 已換 venus/pete、zone 搬到 589411a、response/apex/www 全解析。**response 因預staged 零斷線**。⚠ 30 天內不能再 move。
+- 回退：589411 側 worker/Pages 未拆、仍當 fallback（穩定期後才於 Phase 3 下線）。
 
-### 2Ca-4 Access 白名單在 589411a 重建（併入原 P0-2）〔Joseph〕
-- [ ] **2Ca-4** 589411a Zero Trust → Access app `response.new-cpc.com` → Allow + 員工 Gmail 白名單（存取控制 CC 不代動）。
+### 2Ca-4 存取控制（**重新設計**：不用 Cloudflare Access，改 app 層 Supabase 閘）
+- [x] **589411 孤兒 Access app 已刪**（Joseph，2026-07-12）：move 後那道 Access 留在 589411、按 hostname 還在攔 response → 刪除後 response 開放。
+- [進行中] **改用 Supabase Auth 應用層閘**（決策：Cloudflare Access 做不到「LINE 登入」，只能 Gmail；需求是 **LINE 白名單 OR 特定 Gmail** 才能用）：worker `/api` 驗 Supabase token → LINE 查 `cpc_identities`(選項B,身份/職位統一)、Google 查 4 人 Gmail 白名單(`117617hsuan`/`s1211391478`/`richard7251benson`/`onlycjw1421`)。前端 /api 帶 token。**CC 建置中**。LINE 名單的人明天 `/bindlink` 綁。
 
 ### 2Ca-5 LINE / OAuth 校正
 - [ ] **2Ca-5a** LINE Developers webhook URL 若指 589411 worker → 改指 589411a worker（或自訂網域 `new-cpc.com/line/webhook`）。
